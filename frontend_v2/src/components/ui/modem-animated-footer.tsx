@@ -1,8 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  NotepadTextDashed,
-  Mail,
+  NotepadTextDashed
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

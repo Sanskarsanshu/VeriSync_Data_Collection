@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react"
-import { ArrowDown, Eye } from "lucide-react"
+import { ArrowDown } from "lucide-react"
 import { animate, stagger } from "animejs"
 import { Link } from "react-router-dom"
 
