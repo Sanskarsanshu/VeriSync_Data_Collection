@@ -66,42 +66,25 @@ export class EnrollmentService {
       });
       const semesters = await this.prisma.semester.findMany();
       const sections = await this.prisma.section.findMany();
-      
-      // If the database has records, return them
-      if (batches.length > 0 && sections.length > 0) {
-        return { batches, semesters, sections };
-      }
+      return { batches, semesters, sections };
     } catch (e) {
-      // Ignore Prisma errors (e.g. if the tables aren't created yet)
-      console.warn("Prisma error fetching metadata, falling back to dummy data");
+      console.error("Error fetching metadata:", e);
+      throw new HttpException('Failed to load academic metadata. Ensure database is initialized.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    // Fallback Dummy Data so the frontend form doesn't break when database is empty
-    return {
-      batches: [
-        { id: 'dummy-batch-1', code: 'MCA-2024-2026', name: 'MCA 2024-2026' },
-        { id: 'dummy-batch-2', code: 'BCA-2024-2027', name: 'BCA 2024-2027' }
-      ],
-      semesters: [
-        { id: 'dummy-sem-1', term: 1, name: 'Semester I' },
-        { id: 'dummy-sem-2', term: 2, name: 'Semester II' }
-      ],
-      sections: [
-        { id: 'dummy-sec-1', code: 'A', name: 'Section A' },
-        { id: 'dummy-sec-2', code: 'B', name: 'Section B' }
-      ]
-    };
   }
 
   async submitEnrollment(data: any) {
     const { token, personalInfo, academicInfo, faceEmbedding } = data;
 
-    const enrollmentToken = await this.prisma.enrollmentToken.findUnique({
-      where: { token },
-    });
+    let enrollmentToken = null;
+    if (token) {
+      enrollmentToken = await this.prisma.enrollmentToken.findUnique({
+        where: { token },
+      });
 
-    if (!enrollmentToken || enrollmentToken.status !== 'PENDING') {
-      throw new HttpException('Invalid or expired token', HttpStatus.BAD_REQUEST);
+      if (!enrollmentToken || enrollmentToken.status !== 'PENDING') {
+        throw new HttpException('Invalid or expired token', HttpStatus.BAD_REQUEST);
+      }
     }
 
     const rollNumber = personalInfo.rollNumber;
@@ -109,18 +92,6 @@ export class EnrollmentService {
     const tempPassword = crypto.randomBytes(6).toString('hex');
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     const studentId = `STD${new Date().getFullYear()}${Math.floor(1000 + Math.random() * 9000)}`;
-
-    // Bypass Prisma if the database is uninitialized and using dummy metadata
-    if (academicInfo.batchId && academicInfo.batchId.startsWith('dummy-')) {
-      console.warn("Simulating success for dummy batch:", data);
-      return {
-        success: true,
-        studentId: studentId,
-        tempPassword,
-        name: personalInfo.fullName,
-        rollNumber: personalInfo.rollNumber,
-      };
-    }
 
     try {
       const result = await this.prisma.$transaction(async (prisma) => {
@@ -162,10 +133,12 @@ export class EnrollmentService {
           },
         });
 
-        await prisma.enrollmentToken.update({
-          where: { id: enrollmentToken.id },
-          data: { status: 'COMPLETED' },
-        });
+        if (enrollmentToken) {
+          await prisma.enrollmentToken.update({
+            where: { id: enrollmentToken.id },
+            data: { status: 'COMPLETED' },
+          });
+        }
 
         return { user, student };
       });
