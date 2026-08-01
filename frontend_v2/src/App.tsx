@@ -24,6 +24,7 @@ function App() {
         {/* Placeholder Student Routes */}
         <Route path="/student" element={<StudentDashboard />} />
         <Route path="/enroll/:token" element={<EnrollmentFlow />} />
+        <Route path="/enroll" element={<EnrollmentFlow />} />
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
