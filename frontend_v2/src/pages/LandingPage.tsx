@@ -61,9 +61,9 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-            <Link to="/login">
-              <Button size="lg" className="h-12 px-8 text-base bg-foreground text-background hover:bg-foreground/90 shadow-xl shadow-foreground/5">
-                Access Dashboard
+            <Link to="/enroll">
+              <Button size="lg" className="h-12 px-8 text-base bg-emerald-500 text-white hover:bg-emerald-600 shadow-xl shadow-emerald-500/20">
+                Go to Data Collection Form
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
