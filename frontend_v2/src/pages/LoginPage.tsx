@@ -38,8 +38,8 @@ export default function LoginPage() {
               &ldquo;VeriSync has completely transformed our campus operations. Attendance is now automated, highly secure, and instantly actionable.&rdquo;
             </p>
             <footer className="flex flex-col">
-              <span className="font-semibold text-foreground">Dr. Sarah Jenkins</span>
-              <span className="font-mono text-sm text-emerald-500">Dean of Academics</span>
+              <span className="font-semibold text-foreground">Dr. Bhawna Sinha(HOD)</span>
+              <span className="font-mono text-sm text-emerald-500">Ph.D, M.Phil, MCA, MBA</span>
             </footer>
           </blockquote>
         </div>
