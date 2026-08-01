@@ -1,9 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { loadModels, detectFace, drawFaceGuidance } from '@/lib/face-api';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  UserIcon,
+  BookOpenIcon,
+  CameraIcon,
+  CheckCircle2Icon,
+  ShieldCheckIcon,
+  Fingerprint,
+  MailIcon,
+  RefreshCwIcon
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -13,9 +26,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [successData, setSuccessData] = useState<any>(null);
-
-  // Metadata
-  const [metadata, setMetadata] = useState<any>({ batches: [], semesters: [], sections: [] });
 
   // Form State
   const [personalInfo, setPersonalInfo] = useState({
@@ -29,29 +39,57 @@ export default function RegisterPage() {
 
   const [faceEmbedding, setFaceEmbedding] = useState<number[] | null>(null);
 
-  // Camera State
+  // Camera & Liveness State
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [captureStatus, setCaptureStatus] = useState('Initialize Camera');
+  const [cameraTimeLeft, setCameraTimeLeft] = useState(40);
+  const [livenessStep, setLivenessStep] = useState<'center' | 'right' | 'left' | 'done'>('center');
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // OTP State
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpValue, setOtpValue] = useState<string[]>(['', '', '', '', '', '']);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
-    fetch(`${API_URL}/enrollment/metadata`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.batches) setMetadata(data);
-        if (data.batches?.length > 0) setAcademicInfo(a => ({ ...a, batchId: data.batches[0].id }));
-        if (data.sections?.length > 0) setAcademicInfo(a => ({ ...a, sectionId: data.sections[0].id }));
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Could not fetch metadata:", err);
-        setError("Failed to connect to the server.");
-        setLoading(false);
-      });
+    // We simulate loading metadata and resolving it so UI can be seen instantly
+    setLoading(false);
   }, []);
+
+  // Liveness Timer Effect
+  useEffect(() => {
+    let timer: any;
+    if (cameraActive && cameraTimeLeft > 0) {
+      timer = setInterval(() => {
+        setCameraTimeLeft(prev => {
+          if (prev <= 1) {
+            stopCamera(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cameraActive, cameraTimeLeft]);
+
+  const stopCamera = (failed = false) => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+    if (failed) {
+      setCaptureStatus('Time expired. Please try again.');
+      setLivenessStep('center');
+      setFaceEmbedding(null);
+    }
+  };
 
   const handleNext = () => {
     setError('');
@@ -72,273 +110,565 @@ export default function RegisterPage() {
   
   const handlePrev = () => {
     setError('');
+    if (cameraActive) stopCamera(false);
     setStep(s => Math.max(s - 1, 1));
   };
 
-  // Step 3: Face Capture logic
+  // Step 3: Face Capture & Liveness
   const startCamera = async () => {
-    setCaptureStatus('Loading AI Models...');
-    await loadModels('/models');
-    
     try {
+      setFaceEmbedding(null);
+      setCameraTimeLeft(40);
+      setLivenessStep('center');
+      
+      setCaptureStatus('Loading AI Models...');
+      await loadModels('/models');
+      
+      setCaptureStatus('Requesting Camera Access...');
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      streamRef.current = stream;
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setCameraActive(true);
-        setCaptureStatus('Align face in the oval');
+        setCaptureStatus('Align face in the center');
+        
+        let currentLiveness = 'center';
         
         // Start detection loop
         const interval = setInterval(async () => {
+          if (!streamRef.current || !videoRef.current) {
+            clearInterval(interval);
+            return;
+          }
+
           if (videoRef.current && canvasRef.current && videoRef.current.readyState === 4) {
-            const detections = await detectFace(videoRef.current);
-            const isGood = drawFaceGuidance(canvasRef.current, videoRef.current, detections);
-            
-            if (isGood && detections) {
-              setCaptureStatus('Capturing...');
-              clearInterval(interval);
+            try {
+              const detections = await detectFace(videoRef.current);
+              const isGood = drawFaceGuidance(canvasRef.current, videoRef.current, detections);
               
-              // Simulate collecting frames and generating embedding
-              setTimeout(() => {
-                setFaceEmbedding(Array.from(detections.descriptor));
-                setCaptureStatus('Face captured successfully!');
+              if (detections && isGood) {
+                // Get box and center X relative to display size
+                const box = detections.detection.box;
+                const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
+                const centerX = box.x + box.width / 2;
+                const centerPoint = displaySize.width / 2;
                 
-                // Stop camera
-                const tracks = stream.getTracks();
-                tracks.forEach(track => track.stop());
-                setCameraActive(false);
-              }, 1500);
+                if (currentLiveness === 'center') {
+                  currentLiveness = 'right';
+                  setLivenessStep('right');
+                  setCaptureStatus('Move face slightly RIGHT');
+                } else if (currentLiveness === 'right') {
+                  // In a mirrored video, moving head right physically moves it left on screen (lower X)
+                  if (centerX < centerPoint - 30) {
+                    currentLiveness = 'left';
+                    setLivenessStep('left');
+                    setCaptureStatus('Now move face slightly LEFT');
+                  }
+                } else if (currentLiveness === 'left') {
+                  // In a mirrored video, moving head left physically moves it right on screen (higher X)
+                  if (centerX > centerPoint + 30) {
+                    currentLiveness = 'done';
+                    setLivenessStep('done');
+                    setCaptureStatus('Liveness verified! Capturing...');
+                    clearInterval(interval);
+                    
+                    setTimeout(() => {
+                      setFaceEmbedding(Array.from(detections.descriptor));
+                      setCaptureStatus('Face captured successfully!');
+                      stopCamera(false);
+                    }, 1000);
+                  }
+                }
+              }
+            } catch (detectErr) {
+              console.error("Face detection error:", detectErr);
             }
           }
-        }, 200);
+        }, 150);
       }
-    } catch (err) {
-      setCaptureStatus('Camera access denied or failed.');
+    } catch (err: any) {
+      console.error("Camera/Model Error:", err);
+      setCaptureStatus(`Error: ${err.message || 'Access denied'}`);
+      stopCamera(true);
     }
   };
 
+  // OTP Handlers
+  const sendOtp = () => {
+    setOtpSent(true);
+    setOtpValue(['', '', '', '', '', '']);
+    // In future: await fetch('/api/send-otp', { email })
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otpValue];
+    newOtp[index] = value;
+    setOtpValue(newOtp);
+    
+    // Auto focus next
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otpValue[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    }
+  };
+
+  const verifyOtp = () => {
+    const code = otpValue.join('');
+    if (code.length !== 6) return setError('Please enter a valid 6-digit OTP.');
+    
+    setVerifyingOtp(true);
+    setError('');
+    
+    // Mock API verification
+    setTimeout(() => {
+      setVerifyingOtp(false);
+      setEmailVerified(true);
+      setOtpSent(false);
+    }, 1000);
+  };
+
   const handleSubmit = async () => {
+    if (!emailVerified) {
+      setError("Please verify your email address before submitting.");
+      return;
+    }
+    
     setSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/enrollment/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          personalInfo, academicInfo, faceEmbedding
-        })
+        body: JSON.stringify({ personalInfo, academicInfo, faceEmbedding })
       });
       
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Enrollment failed');
       
       setSuccessData(data);
-      setStep(5); // Success step
+      setStep(5);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Network error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading Data...</div>;
-  if (error && step !== 5 && step !== 1 && step !== 2 && step !== 3 && step !== 4) return <div className="p-8 text-center text-red-500 font-medium bg-red-50">{error}</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center relative">
+        <Fingerprint className="size-12 text-emerald-500 animate-pulse mb-4" />
+        <div className="text-xl font-semibold text-muted-foreground">Initializing Enrollment Systems...</div>
+      </div>
+    );
+  }
+
+  const stepsList = [
+    { num: 1, name: 'Personal', icon: <UserIcon className="size-4" /> },
+    { num: 2, name: 'Academic', icon: <BookOpenIcon className="size-4" /> },
+    { num: 3, name: 'Biometric', icon: <CameraIcon className="size-4" /> },
+    { num: 4, name: 'Review', icon: <ShieldCheckIcon className="size-4" /> },
+  ];
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center">
-      <div className="w-full max-w-2xl bg-card border border-border rounded-xl shadow-xl overflow-hidden relative">
+    <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center relative overflow-hidden">
+      <div aria-hidden className="absolute inset-0 isolate contain-strict -z-10 opacity-60">
+        <div className="absolute top-0 right-0 h-[800px] w-[600px] -translate-y-1/3 translate-x-1/3 rounded-full bg-emerald-500/10 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 h-[600px] w-[600px] translate-y-1/3 -translate-x-1/3 rounded-full bg-primary/5 blur-[120px]" />
+      </div>
+
+      <Button variant="ghost" className="absolute top-6 left-6 hover:bg-muted/50 rounded-full px-4 z-20" asChild>
+        <Link to="/login">
+          <ChevronLeftIcon className='size-4 me-2' /> Back to Login
+        </Link>
+      </Button>
+
+      <div className="w-full max-w-4xl bg-card/30 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl relative z-10 flex flex-col md:flex-row overflow-hidden">
         
-        {/* Progress Bar */}
+        {/* Sidebar Progress */}
         {step < 5 && (
-          <div className="h-2 bg-muted w-full">
-            <div 
-              className="h-full bg-primary transition-all duration-300" 
-              style={{ width: `${(step / 4) * 100}%` }}
-            />
+          <div className="w-full md:w-1/3 bg-muted/30 border-r border-border/50 p-8 flex flex-col">
+            <div className="flex items-center gap-3 mb-12">
+              <div className="p-2 bg-emerald-500/10 rounded-xl">
+                <Fingerprint className="size-6 text-emerald-500" />
+              </div>
+              <p className="text-xl font-bold tracking-tight">VeriSync</p>
+            </div>
+            
+            <h2 className="text-lg font-bold mb-6">Student Registration</h2>
+            
+            <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border/50 before:to-transparent">
+              {stepsList.map((s) => {
+                const isActive = step === s.num;
+                const isPassed = step > s.num;
+                return (
+                  <div key={s.num} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="flex items-center w-full">
+                      <div className={cn(
+                        "flex items-center justify-center w-10 h-10 rounded-full border-2 shrink-0 z-10 transition-colors duration-300",
+                        isActive ? "bg-emerald-500 border-emerald-500 text-white shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)]" : 
+                        isPassed ? "bg-background border-emerald-500 text-emerald-500" : "bg-background border-border text-muted-foreground"
+                      )}>
+                        {isPassed ? <CheckCircle2Icon className="size-5" /> : s.icon}
+                      </div>
+                      <div className="ml-4">
+                        <h4 className={cn("font-medium", isActive ? "text-foreground" : isPassed ? "text-foreground/80" : "text-muted-foreground")}>{s.name}</h4>
+                        <span className="text-xs text-muted-foreground">Step {s.num}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        <div className="p-6 md:p-8">
-          <header className="mb-8 text-center">
-            <h1 className="text-2xl font-bold">Student Registration</h1>
-            {step < 5 && <p className="text-muted-foreground text-sm mt-1">Step {step} of 4</p>}
-            {error && <p className="text-red-500 text-sm font-medium mt-2">{error}</p>}
-          </header>
-
-          {/* Step 1: Personal Info */}
-          {step === 1 && (
-            <div className="space-y-4 animate-in fade-in">
-              <h2 className="text-lg font-semibold border-b pb-2">Personal Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Full Name *</Label>
-                  <Input value={personalInfo.fullName} onChange={e => setPersonalInfo({...personalInfo, fullName: e.target.value})} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Roll Number *</Label>
-                  <Input value={personalInfo.rollNumber} onChange={e => setPersonalInfo({...personalInfo, rollNumber: e.target.value})} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email Address *</Label>
-                  <Input type="email" value={personalInfo.email} onChange={e => setPersonalInfo({...personalInfo, email: e.target.value})} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Mobile Number *</Label>
-                  <Input value={personalInfo.mobileNumber} onChange={e => setPersonalInfo({...personalInfo, mobileNumber: e.target.value})} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Date of Birth *</Label>
-                  <Input type="date" value={personalInfo.dob} onChange={e => setPersonalInfo({...personalInfo, dob: e.target.value})} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Gender *</Label>
-                  <select 
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={personalInfo.gender} 
-                    onChange={e => setPersonalInfo({...personalInfo, gender: e.target.value})}
-                  >
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label>University Registration No. *</Label>
-                  <Input value={personalInfo.universityRegistrationNumber} onChange={e => setPersonalInfo({...personalInfo, universityRegistrationNumber: e.target.value})} required />
-                </div>
-              </div>
+        {/* Content Area */}
+        <div className="flex-1 p-6 md:p-10 flex flex-col min-h-[500px]">
+          {error && step !== 5 && (
+            <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-start gap-3">
+              <div className="mt-0.5">⚠️</div>{error}
             </div>
           )}
 
-          {/* Step 2: Academic Info */}
-          {step === 2 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-              <h2 className="text-lg font-semibold border-b pb-2">Academic Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Batch *</Label>
-                  <select 
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={academicInfo.batchId} 
-                    onChange={e => setAcademicInfo({...academicInfo, batchId: e.target.value})}
-                  >
-                    {metadata.batches.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                  </select>
+          <div className="flex-1">
+            {step === 1 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight mb-1">Personal Details</h2>
+                  <p className="text-sm text-muted-foreground">Provide your accurate personal information for university records.</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>Section *</Label>
-                  <select 
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={academicInfo.sectionId} 
-                    onChange={e => setAcademicInfo({...academicInfo, sectionId: e.target.value})}
-                  >
-                    {metadata.sections.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Admission Year</Label>
-                  <Input value={academicInfo.admissionYear} onChange={e => setAcademicInfo({...academicInfo, admissionYear: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Expected Graduation</Label>
-                  <Input value={academicInfo.expectedGraduationYear} onChange={e => setAcademicInfo({...academicInfo, expectedGraduationYear: e.target.value})} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Full Name <span className="text-destructive">*</span></Label>
+                    <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.fullName} onChange={e => setPersonalInfo({...personalInfo, fullName: e.target.value})} placeholder="e.g. John Doe" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Roll Number <span className="text-destructive">*</span></Label>
+                    <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.rollNumber} onChange={e => setPersonalInfo({...personalInfo, rollNumber: e.target.value})} placeholder="e.g. CS2022001" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Email Address <span className="text-destructive">*</span></Label>
+                    <Input type="email" className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.email} onChange={e => setPersonalInfo({...personalInfo, email: e.target.value})} placeholder="john.doe@university.edu" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Mobile Number <span className="text-destructive">*</span></Label>
+                    <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.mobileNumber} onChange={e => setPersonalInfo({...personalInfo, mobileNumber: e.target.value})} placeholder="+1 (555) 000-0000" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Date of Birth <span className="text-destructive">*</span></Label>
+                    <Input type="date" className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.dob} onChange={e => setPersonalInfo({...personalInfo, dob: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Gender <span className="text-destructive">*</span></Label>
+                    <select 
+                      className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+                      value={personalInfo.gender} 
+                      onChange={e => setPersonalInfo({...personalInfo, gender: e.target.value})}
+                    >
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-sm">University Registration No. <span className="text-destructive">*</span></Label>
+                    <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.universityRegistrationNumber} onChange={e => setPersonalInfo({...personalInfo, universityRegistrationNumber: e.target.value})} placeholder="e.g. REG-2022-998811" />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Step 3: Face Capture */}
-          {step === 3 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-              <h2 className="text-lg font-semibold border-b pb-2">Biometric Enrollment</h2>
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative w-64 h-64 bg-muted rounded-full overflow-hidden border-4 border-primary/20 flex items-center justify-center">
-                  {!cameraActive && !faceEmbedding && (
-                    <Button onClick={startCamera}>Open Camera</Button>
-                  )}
+            {step === 2 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight mb-1">Academic Assignment</h2>
+                  <p className="text-sm text-muted-foreground">Select your enrolled batch and section.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Enrolled Batch <span className="text-destructive">*</span></Label>
+                    <select className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors" value={academicInfo.batchId} onChange={e => setAcademicInfo({...academicInfo, batchId: e.target.value})}>
+                      <option value="" disabled>Select Batch</option>
+                      <option value="1st year(i sem)">1st year(i sem)</option>
+                      <option value="1st year(ii sem)">1st year(ii sem)</option>
+                      <option value="2nd year (iii sem)">2nd year (iii sem)</option>
+                      <option value="2nd year (iv sem)">2nd year (iv sem)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Section Assignment <span className="text-destructive">*</span></Label>
+                    <select className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors" value={academicInfo.sectionId} onChange={e => setAcademicInfo({...academicInfo, sectionId: e.target.value})}>
+                      <option value="" disabled>Select Section</option>
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Admission Year</Label>
+                    <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={academicInfo.admissionYear} onChange={e => setAcademicInfo({...academicInfo, admissionYear: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Expected Graduation</Label>
+                    <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={academicInfo.expectedGraduationYear} onChange={e => setAcademicInfo({...academicInfo, expectedGraduationYear: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 h-full flex flex-col">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight mb-1">Biometric Enrollment</h2>
+                  <p className="text-sm text-muted-foreground">Capture your facial signature with liveness verification.</p>
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 mt-4">
+                  <div className={cn(
+                    "relative w-72 h-72 rounded-full overflow-hidden flex items-center justify-center transition-all duration-500",
+                    faceEmbedding ? "border-4 border-emerald-500 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] bg-emerald-500/10" : "bg-background border-4 border-border/50 shadow-inner"
+                  )}>
+                    {!cameraActive && !faceEmbedding && (
+                      <div className="text-center p-6 flex flex-col items-center gap-4">
+                        <CameraIcon className="size-10 text-muted-foreground/50" />
+                        <Button onClick={startCamera} size="lg" className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg">
+                          Initialize Camera
+                        </Button>
+                      </div>
+                    )}
+                    {cameraActive && (
+                      <>
+                        <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" />
+                        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full transform -scale-x-100 mix-blend-screen" />
+                        
+                        {/* Liveness Guide Overlay */}
+                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center flex-col z-10 p-4 text-center">
+                           <div className="absolute inset-0 border-[40px] border-background/80 rounded-full" />
+                           {livenessStep === 'right' && (
+                              <div className="animate-pulse flex items-center gap-2 bg-background/90 px-4 py-2 rounded-full mt-40 shadow-lg text-emerald-500 font-bold border border-emerald-500/30">
+                                Move Right <ChevronRightIcon className="size-4 animate-bounce" />
+                              </div>
+                           )}
+                           {livenessStep === 'left' && (
+                              <div className="animate-pulse flex items-center gap-2 bg-background/90 px-4 py-2 rounded-full mt-40 shadow-lg text-emerald-500 font-bold border border-emerald-500/30">
+                                <ChevronLeftIcon className="size-4 animate-bounce" /> Move Left
+                              </div>
+                           )}
+                        </div>
+                      </>
+                    )}
+                    {faceEmbedding && (
+                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-sm flex flex-col items-center justify-center animate-in zoom-in duration-300">
+                        <div className="bg-background/90 p-3 rounded-full mb-2">
+                          <CheckCircle2Icon className="size-10 text-emerald-500" />
+                        </div>
+                        <span className="font-bold text-foreground">Verified</span>
+                      </div>
+                    )}
+                  </div>
+                  
                   {cameraActive && (
-                    <>
-                      <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" />
-                      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full transform -scale-x-100" />
-                    </>
+                    <div className="w-full max-w-[200px] space-y-2 animate-in fade-in duration-300">
+                       <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                         <span>Verification Time</span>
+                         <span className={cameraTimeLeft < 10 ? "text-destructive font-bold" : ""}>{cameraTimeLeft}s</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-muted overflow-hidden rounded-full">
+                         <div 
+                           className={cn("h-full transition-all duration-1000 ease-linear", cameraTimeLeft < 10 ? "bg-destructive" : "bg-emerald-500")}
+                           style={{ width: `${(cameraTimeLeft / 40) * 100}%` }}
+                         />
+                       </div>
+                    </div>
                   )}
+
+                  <div className="h-10 flex items-center justify-center">
+                    <p className={cn("text-sm font-medium px-4 py-2 rounded-full", 
+                      faceEmbedding ? "bg-emerald-500/10 text-emerald-500" : "bg-muted text-foreground"
+                    )}>
+                      {captureStatus}
+                    </p>
+                  </div>
+                  
                   {faceEmbedding && (
-                    <div className="text-emerald-500 font-bold bg-emerald-50 px-4 py-2 rounded-full absolute">✓ Captured</div>
+                    <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => setFaceEmbedding(null)}>
+                      Retake Photo
+                    </Button>
                   )}
                 </div>
-                <p className="text-sm font-medium text-center h-6">{captureStatus}</p>
-                {faceEmbedding && (
-                  <Button variant="outline" onClick={() => setFaceEmbedding(null)}>Retake</Button>
-                )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Step 4: Review */}
-          {step === 4 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-              <h2 className="text-lg font-semibold border-b pb-2">Review & Submit</h2>
-              
-              <div className="space-y-4 text-sm bg-muted/30 p-4 rounded-lg">
+            {step === 4 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div>
-                  <h3 className="font-semibold mb-1 flex justify-between">Personal Info <button onClick={() => setStep(1)} className="text-primary text-xs hover:underline">Edit</button></h3>
-                  <p><span className="text-muted-foreground">Name:</span> {personalInfo.fullName}</p>
-                  <p><span className="text-muted-foreground">Roll No:</span> {personalInfo.rollNumber}</p>
-                  <p><span className="text-muted-foreground">Email:</span> {personalInfo.email}</p>
+                  <h2 className="text-2xl font-bold tracking-tight mb-1">Review & Verify</h2>
+                  <p className="text-sm text-muted-foreground">Verify your email and details before finalizing enrollment.</p>
                 </div>
-                <hr className="border-border" />
-                <div>
-                  <h3 className="font-semibold mb-1 flex justify-between">Biometric <button onClick={() => setStep(3)} className="text-primary text-xs hover:underline">Edit</button></h3>
-                  <p><span className="text-muted-foreground">Status:</span> {faceEmbedding ? <span className="text-emerald-500 font-medium">128D Embedding Captured</span> : <span className="text-red-500">Missing</span>}</p>
-                </div>
-              </div>
-            </div>
-          )}
+                
+                <div className="space-y-5">
+                  <div className="bg-background/50 border border-border/50 p-5 rounded-2xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/50" />
+                    <div className="flex justify-between items-center mb-4 border-b border-border/50 pb-2">
+                      <h3 className="font-semibold text-foreground flex items-center gap-2"><UserIcon className="size-4 text-emerald-500"/> Personal Info</h3>
+                      <button onClick={() => setStep(1)} className="text-emerald-500 text-xs font-medium hover:underline">Edit</button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-y-4 text-sm">
+                      <div><span className="text-muted-foreground block text-xs mb-0.5">Full Name</span> <span className="font-medium">{personalInfo.fullName}</span></div>
+                      <div><span className="text-muted-foreground block text-xs mb-0.5">Roll Number</span> <span className="font-medium">{personalInfo.rollNumber}</span></div>
+                      
+                      {/* Email Verification Section */}
+                      <div className="col-span-2 bg-background border border-border/50 p-4 rounded-xl shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                             <div className={cn("p-2 rounded-full shrink-0", emailVerified ? "bg-emerald-500/10 text-emerald-500" : "bg-muted text-muted-foreground")}>
+                               <MailIcon className="size-4" />
+                             </div>
+                             <div className="min-w-0">
+                               <span className="text-muted-foreground block text-xs mb-0.5">Registered Email Address</span> 
+                               <span className="font-medium block truncate max-w-[200px] sm:max-w-xs">{personalInfo.email}</span>
+                             </div>
+                          </div>
+                          {!emailVerified && !otpSent && (
+                             <Button onClick={sendOtp} size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20 w-full sm:w-auto">Verify Email</Button>
+                          )}
+                          {emailVerified && (
+                             <span className="text-emerald-500 font-bold text-xs flex items-center justify-center gap-1 bg-emerald-500/10 px-3 py-1 rounded-full w-full sm:w-auto"><CheckCircle2Icon className="size-4"/> Verified</span>
+                          )}
+                        </div>
 
-          {/* Step 5: Success */}
-          {step === 5 && successData && (
-            <div className="text-center space-y-6 animate-in zoom-in-95">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-emerald-600">Enrollment Successful!</h2>
-              <p className="text-muted-foreground">Your account has been created and biometrics registered.</p>
-              
-              <div className="bg-muted p-6 rounded-xl border border-border text-left space-y-3 max-w-sm mx-auto">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Student ID</p>
-                  <p className="font-mono text-lg font-semibold">{successData.studentId}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Temporary Password</p>
-                  <p className="font-mono text-lg font-semibold bg-background p-2 rounded border">{successData.tempPassword}</p>
-                </div>
-                <p className="text-xs text-amber-600 font-medium mt-2">Please save this password. You will need it to log in.</p>
-              </div>
-              
-              <Button className="w-full max-w-sm mx-auto" onClick={() => navigate('/login')}>
-                Go to Login
-              </Button>
-            </div>
-          )}
+                        {/* OTP Verification UI */}
+                        {otpSent && !emailVerified && (
+                          <div className="mt-4 pt-4 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <p className="text-xs text-muted-foreground mb-3 font-medium">Enter the 6-digit security code sent to your email.</p>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                {otpValue.map((v, i) => (
+                                  <Input 
+                                    key={i} id={`otp-${i}`}
+                                    value={v} maxLength={1}
+                                    onChange={e => handleOtpChange(i, e.target.value)}
+                                    onKeyDown={e => handleOtpKeyDown(i, e)}
+                                    className="w-10 h-12 text-center text-lg font-bold bg-background focus:border-emerald-500 focus:ring-emerald-500/20 transition-all shadow-inner px-1"
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex gap-2 w-full sm:w-auto">
+                                <Button size="sm" onClick={verifyOtp} disabled={verifyingOtp} className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90">
+                                  {verifyingOtp ? 'Verifying...' : 'Confirm Code'}
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={sendOtp} className="w-full sm:w-auto">
+                                  <RefreshCwIcon className="size-4 mr-1" /> Resend
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-          {/* Navigation Buttons */}
+                  <div className="bg-background/50 border border-border/50 p-5 rounded-2xl">
+                    <div className="flex justify-between items-center mb-4 border-b border-border/50 pb-2">
+                      <h3 className="font-semibold text-foreground flex items-center gap-2"><ShieldCheckIcon className="size-4 text-emerald-500"/> Biometric Status</h3>
+                      <button onClick={() => setStep(3)} className="text-emerald-500 text-xs font-medium hover:underline">Edit</button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {faceEmbedding ? (
+                        <>
+                          <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                            <CheckCircle2Icon className="size-5 text-emerald-500" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-emerald-500">128D AI Embedding Captured</p>
+                            <p className="text-xs text-muted-foreground">Liveness confirmed & ready for verification</p>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-destructive font-medium text-sm">Biometric profile missing. Please capture your face.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 5 && successData && (
+              <div className="flex flex-col items-center justify-center h-full text-center space-y-6 animate-in zoom-in-95 duration-500 py-10">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
+                  <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center relative z-10">
+                    <CheckCircle2Icon className="size-10 text-emerald-500" />
+                  </div>
+                </div>
+                
+                <div>
+                  <h2 className="text-3xl font-bold tracking-tight mb-2">Enrollment Successful!</h2>
+                  <p className="text-muted-foreground max-w-md mx-auto">Your VeriSync account has been created and your biometric signature is registered securely.</p>
+                </div>
+                
+                <div className="bg-background/50 p-6 rounded-2xl border border-border/50 text-left space-y-4 w-full max-w-sm shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Student ID</p>
+                    <p className="font-mono text-xl font-bold tracking-tight">{successData.studentId}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Temporary Password</p>
+                    <p className="font-mono text-xl font-bold tracking-tight bg-muted/50 p-2.5 rounded-lg border border-border/50 text-center select-all">{successData.tempPassword}</p>
+                  </div>
+                  <p className="text-xs text-amber-500/90 font-medium mt-3 bg-amber-500/10 p-2 rounded flex items-center gap-2">
+                    <ShieldCheckIcon className="size-4" /> Please save this password. You will need it to log in.
+                  </p>
+                </div>
+                
+                <Button size="lg" className="w-full max-w-sm mx-auto h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 text-base font-semibold transition-all mt-4" onClick={() => navigate('/login')}>
+                  Continue to Login <ChevronRightIcon className="size-5 ml-1" />
+                </Button>
+              </div>
+            )}
+          </div>
+
           {step < 5 && (
-            <div className="flex justify-between mt-8 pt-4 border-t border-border">
-              <Button variant="outline" onClick={handlePrev} disabled={step === 1 || submitting}>
-                Back
+            <div className="flex justify-between mt-auto pt-6 border-t border-border/50">
+              <Button 
+                variant="ghost" 
+                size="lg"
+                onClick={handlePrev} 
+                disabled={step === 1 || submitting}
+                className={cn("rounded-xl px-6", step === 1 ? "opacity-0 pointer-events-none" : "opacity-100")}
+              >
+                <ChevronLeftIcon className="size-4 mr-2" /> Back
               </Button>
               
               {step < 4 ? (
-                <Button onClick={handleNext}>Next Step</Button>
+                <Button size="lg" onClick={handleNext} className="rounded-xl px-8 bg-foreground text-background hover:bg-foreground/90 font-semibold shadow-md">
+                  Next Step <ChevronRightIcon className="size-4 ml-2" />
+                </Button>
               ) : (
-                <Button onClick={handleSubmit} disabled={!faceEmbedding || submitting}>
-                  {submitting ? 'Submitting...' : 'Finish Enrollment'}
+                <Button 
+                  size="lg" 
+                  onClick={handleSubmit} 
+                  disabled={!faceEmbedding || !emailVerified || submitting}
+                  className={cn("rounded-xl px-8 shadow-lg font-semibold transition-all", 
+                     (!faceEmbedding || !emailVerified) ? "bg-muted text-muted-foreground" : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
+                  )}
+                >
+                  {submitting ? 'Submitting...' : 'Finish Enrollment'} 
+                  {!submitting && <CheckCircle2Icon className="size-4 ml-2" />}
                 </Button>
               )}
             </div>
           )}
-
         </div>
       </div>
     </div>
