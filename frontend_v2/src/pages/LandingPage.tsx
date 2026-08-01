@@ -2,9 +2,9 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
-  ArrowRight, Fingerprint, Camera, KeyRound, Clock, 
-  ShieldCheck, Zap, Users, LayoutDashboard, ChevronDown, 
-  Globe, Mail, MessageSquare, Sun, Moon, Menu, X
+  ArrowRight, Fingerprint, Clock, 
+  ShieldCheck, Zap, Users, ChevronDown, 
+  Globe, Mail, Sun, Moon, Menu, X
 } from 'lucide-react';
 import { CinematicAttendanceSection } from '@/components/ui/cinematic-attendance-scroll-section';
 import { Footer } from '@/components/ui/modem-animated-footer';
