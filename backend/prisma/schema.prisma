@@ -1,0 +1,392 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------
+// 1. Core Authentication & Identity (Real SaaS Login)
+// ---------------------------------------------------------
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  passwordHash   String         // Hashed using bcrypt
+  role           Role
+  status         AccountStatus  @default(PENDING)
+  failedAttempts Int            @default(0)
+  lastLoginAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  adminProfile   Admin?
+  teacherProfile Teacher?
+  studentProfile Student?
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  name      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------
+// 2. Institutional Hierarchy
+// ---------------------------------------------------------
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+model College {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  code        String       @unique
+  status      Status       @default(INACTIVE)
+  departments Department[]
+  calendars   AcademicCalendar[]
+}
+
+model Department {
+  id        String      @id @default(uuid())
+  name      String      @unique
+  code      String      @unique
+  collegeId String
+  status    Status      @default(INACTIVE)
+  college   College     @relation(fields: [collegeId], references: [id])
+  programmes Programme[]
+  teachers  Teacher[]
+}
+
+model Programme {
+  id           String    @id @default(uuid())
+  name         String    @unique
+  shortName    String    @unique
+  durationYears Int
+  totalSemesters Int
+  departmentId String
+  status       Status    @default(INACTIVE)
+  department   Department @relation(fields: [departmentId], references: [id])
+  sessions     AcademicSession[]
+  subjects     Subject[]
+}
+
+model AcademicSession {
+  id          String   @id @default(uuid())
+  startYear   Int
+  endYear     Int
+  programmeId String
+  status      Status   @default(INACTIVE)
+  programme   Programme @relation(fields: [programmeId], references: [id])
+  batches     Batch[]
+}
+
+model Batch {
+  id          String   @id @default(uuid())
+  name        String
+  sessionId   String
+  status      Status   @default(INACTIVE)
+  session     AcademicSession @relation(fields: [sessionId], references: [id])
+  semesters   Semester[]
+  students    Student[]
+}
+
+model Semester {
+  id            String   @id @default(uuid())
+  semesterNumber Int
+  batchId       String
+  startDate     DateTime
+  endDate       DateTime
+  status        Status   @default(INACTIVE)
+  batch         Batch    @relation(fields: [batchId], references: [id])
+  sections      Section[]
+}
+
+model Section {
+  id         String   @id @default(uuid())
+  name       String
+  capacity   Int      @default(50)
+  semesterId String
+  status     Status   @default(INACTIVE)
+  semester   Semester @relation(fields: [semesterId], references: [id])
+  students   Student[]
+  courses    Course[]
+}
+
+// ---------------------------------------------------------
+// 3. Profiles & Enrollment
+// ---------------------------------------------------------
+
+model Teacher {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  departmentId String
+  employeeId   String   @unique
+  name         String
+  aliases      TeacherAlias[] // e.g. "PK", "BKP" for timetable resolution
+  status       Status   @default(INACTIVE)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id])
+  courses      Course[]
+}
+
+model TeacherAlias {
+  id        String  @id @default(uuid())
+  teacherId String
+  alias     String  @unique // e.g. "PK"
+  teacher   Teacher @relation(fields: [teacherId], references: [id])
+}
+
+model Student {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  batchId            String
+  sectionId          String
+  rollNumber         String   @unique
+  registrationNumber String?  @unique
+  name               String
+  status             Status   @default(INACTIVE)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batch              Batch    @relation(fields: [batchId], references: [id])
+  section            Section  @relation(fields: [sectionId], references: [id])
+  attendanceRecords  AttendanceRecord[]
+  profile            StudentProfile?
+  faceEmbedding      FaceEmbedding?
+}
+
+model StudentProfile {
+  id                     String   @id @default(uuid())
+  studentId              String   @unique
+  dob                    DateTime?
+  gender                 String?
+  mobileNumber           String?
+  email                  String?
+  bloodGroup             String?
+  photoUrl               String?
+  admissionYear          Int?
+  expectedGraduationYear Int?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  student                Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model FaceEmbedding {
+  id        String   @id @default(uuid())
+  studentId String   @unique
+  embedding Float[]
+  createdAt DateTime @default(now())
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+enum TokenStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
+model EnrollmentToken {
+  id              String      @id @default(uuid())
+  token           String      @unique
+  status          TokenStatus @default(PENDING)
+  targetRollNumber String?
+  targetName      String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Subject {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  credits     Int
+  isPractical Boolean  @default(false)
+  programmeId String
+  programme   Programme @relation(fields: [programmeId], references: [id])
+  courses     Course[]
+}
+
+model Course {
+  id               String   @id @default(uuid())
+  subjectId        String
+  sectionId        String
+  primaryTeacherId String
+  status           Status   @default(INACTIVE)
+  subject          Subject  @relation(fields: [subjectId], references: [id])
+  section          Section  @relation(fields: [sectionId], references: [id])
+  primaryTeacher   Teacher  @relation(fields: [primaryTeacherId], references: [id])
+  timetableRules   TimetableRule[]
+  scheduledClasses ScheduledClass[]
+}
+
+// ---------------------------------------------------------
+// 4. Academic Calendar & Precedence Engine
+// ---------------------------------------------------------
+
+enum CalendarEventType {
+  HOLIDAY
+  VACATION_START
+  VACATION_END
+  EXAM_START
+  EXAM_END
+  SPECIAL_WORKING_DAY
+}
+
+model AcademicCalendar {
+  id          String   @id @default(uuid())
+  collegeId   String
+  name        String   // e.g. "Academic Calendar 2026-2027"
+  startDate   DateTime
+  endDate     DateTime
+  sourceFile  String?
+  status      Status   @default(ACTIVE)
+  college     College  @relation(fields: [collegeId], references: [id])
+  events      AcademicCalendarEvent[]
+}
+
+model AcademicCalendarEvent {
+  id          String           @id @default(uuid())
+  calendarId  String
+  eventType   CalendarEventType
+  name        String
+  date        DateTime
+  isRecurring Boolean          @default(false)
+  calendar    AcademicCalendar @relation(fields: [calendarId], references: [id])
+}
+
+// ---------------------------------------------------------
+// 5. Timetable & Scheduled Classes
+// ---------------------------------------------------------
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model TimetableRule {
+  id        String    @id @default(uuid())
+  courseId  String
+  dayOfWeek DayOfWeek
+  startTime String    // e.g. "09:00"
+  endTime   String    // e.g. "10:00"
+  room      String?
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  course    Course    @relation(fields: [courseId], references: [id])
+}
+
+model ScheduledClass {
+  id                 String   @id @default(uuid())
+  courseId           String
+  date               DateTime // Specific calendar date
+  startTime          String
+  endTime            String
+  isCancelled        Boolean  @default(false)
+  cancellationReason String?
+  isHoliday          Boolean  @default(false)
+  course             Course   @relation(fields: [courseId], references: [id])
+  attendanceSession  AttendanceSession?
+}
+
+// ---------------------------------------------------------
+// 6. Hybrid Attendance & Corrections
+// ---------------------------------------------------------
+
+enum SessionStatus {
+  SCHEDULED
+  LIVE
+  CLOSED
+}
+
+model AttendanceSession {
+  id               String   @id @default(uuid())
+  scheduledClassId String   @unique
+  status           SessionStatus @default(SCHEDULED)
+  openedAt         DateTime?
+  closedAt         DateTime?
+  
+  // Hybrid verification details
+  dynamicQrSecret  String?  // Changes every 15s
+  currentOtp       String?  // 6-digit fallback
+  geofenceLat      Float?
+  geofenceLng      Float?
+  
+  scheduledClass   ScheduledClass @relation(fields: [scheduledClassId], references: [id])
+  records          AttendanceRecord[]
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum DerivationState {
+  NONE
+  HOLIDAY
+  CANCELLED
+  NOT_APPLICABLE
+}
+
+model AttendanceRecord {
+  id                  String   @id @default(uuid())
+  sessionId           String
+  studentId           String
+  status              AttendanceStatus
+  derivationState     DerivationState @default(NONE)
+  markedAt            DateTime @default(now())
+  
+  // Anti-proxy evidence
+  deviceFingerprint   String?
+  verifiedByOtp       Boolean  @default(false)
+  verifiedByFace      Boolean  @default(false)
+  gpsLat              Float?
+  gpsLng              Float?
+  
+  session             AttendanceSession @relation(fields: [sessionId], references: [id])
+  student             Student           @relation(fields: [studentId], references: [id])
+  revisions           AttendanceRevision[]
+  
+  @@unique([sessionId, studentId])
+}
+
+enum RevisionWorkflowState {
+  REQUESTED_BY_STUDENT
+  RECOMMENDED_BY_TEACHER
+  APPROVED_BY_ADMIN
+  REJECTED
+}
+
+model AttendanceRevision {
+  id                 String   @id @default(uuid())
+  recordId           String
+  requestedStatus    AttendanceStatus
+  workflowState      RevisionWorkflowState @default(REQUESTED_BY_STUDENT)
+  reason             String
+  requestedAt        DateTime @default(now())
+  reviewedAt         DateTime?
+  reviewedByAdminId  String?
+  
+  record             AttendanceRecord @relation(fields: [recordId], references: [id])
+}
