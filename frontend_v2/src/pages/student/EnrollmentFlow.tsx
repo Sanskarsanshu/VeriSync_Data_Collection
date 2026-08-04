@@ -21,7 +21,8 @@ export default function EnrollmentFlow() {
   // Form State
   const [personalInfo, setPersonalInfo] = useState({
     fullName: '', rollNumber: '', universityRegistrationNumber: '',
-    gender: 'MALE', dob: '', mobileNumber: '', email: '', bloodGroup: ''
+    gender: 'MALE', dob: '', mobileNumber: '', email: '', bloodGroup: '',
+    password: '', confirmPassword: ''
   });
   
   const [academicInfo, setAcademicInfo] = useState({
@@ -148,6 +149,21 @@ export default function EnrollmentFlow() {
     }
   };
 
+  const validateAndNext = () => {
+    if (step === 1) {
+      if (personalInfo.password !== personalInfo.confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+      if (personalInfo.password.length < 6) {
+        setError('Password must be at least 6 characters long');
+        return;
+      }
+    }
+    setError('');
+    handleNext();
+  };
+
   if (loading) return <div className="p-8 text-center">Validating Secure Link...</div>;
   if (error && step !== 5) return <div className="p-8 text-center text-red-500 font-medium bg-red-50">{error}</div>;
 
@@ -211,6 +227,14 @@ export default function EnrollmentFlow() {
                 <div className="space-y-2 md:col-span-2">
                   <Label>University Registration No. *</Label>
                   <Input value={personalInfo.universityRegistrationNumber} onChange={e => setPersonalInfo({...personalInfo, universityRegistrationNumber: e.target.value})} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Set Password *</Label>
+                  <Input type="password" value={personalInfo.password} onChange={e => setPersonalInfo({...personalInfo, password: e.target.value})} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Confirm Password *</Label>
+                  <Input type="password" value={personalInfo.confirmPassword} onChange={e => setPersonalInfo({...personalInfo, confirmPassword: e.target.value})} required />
                 </div>
               </div>
             </div>
@@ -319,11 +343,7 @@ export default function EnrollmentFlow() {
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">Student ID</p>
                   <p className="font-mono text-lg font-semibold">{successData.studentId}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Temporary Password</p>
-                  <p className="font-mono text-lg font-semibold bg-background p-2 rounded border">{successData.tempPassword}</p>
-                </div>
-                <p className="text-xs text-amber-600 font-medium mt-2">Please save this password. You will need it to log in.</p>
+                <p className="text-xs text-emerald-600 font-medium mt-2">You can now log in with your email and the password you set during registration.</p>
               </div>
               
               <Button className="w-full max-w-sm mx-auto" onClick={() => navigate('/login')}>
@@ -340,7 +360,7 @@ export default function EnrollmentFlow() {
               </Button>
               
               {step < 4 ? (
-                <Button onClick={handleNext}>Next Step</Button>
+                <Button onClick={validateAndNext}>Next Step</Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={!faceEmbedding || submitting}>
                   {submitting ? 'Submitting...' : 'Finish Enrollment'}

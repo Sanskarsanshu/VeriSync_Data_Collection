@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAppStore } from '@/store/useAppStore';
 import {
   AtSignIcon,
   ChevronLeftIcon,
@@ -14,11 +15,46 @@ import {
 
 export default function LoginPage() {
   const [role, setRole] = useState<'admin' | 'teacher' | 'student'>('admin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const navigate = useNavigate();
+  const setUser = useAppStore((state) => state.setUser);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/${role}`);
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+      
+      // Update global store
+      setUser({
+        id: 'auth-user', 
+        role: data.role.toLowerCase(),
+        name: email,
+      });
+      
+      // Navigate to correct dashboard based on backend role
+      navigate(`/${data.role.toLowerCase()}`);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during login');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -99,6 +135,11 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
+            {error && (
+              <div className="p-3 text-sm text-red-500 bg-red-500/10 rounded-xl border border-red-500/20">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
                 Email Address
@@ -109,6 +150,9 @@ export default function LoginPage() {
                   placeholder={`your.${role}@institution.edu`}
                   className="peer ps-10 h-12 rounded-xl bg-background/50 border-border/50 focus:bg-background transition-colors"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
                   required
                 />
                 <div className="text-muted-foreground absolute inset-y-0 start-0 flex items-center justify-center ps-3.5 peer-focus:text-foreground transition-colors">
@@ -130,6 +174,9 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   className="peer ps-10 h-12 rounded-xl bg-background/50 border-border/50 focus:bg-background transition-colors"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                   required
                 />
                 <div className="text-muted-foreground absolute inset-y-0 start-0 flex items-center justify-center ps-3.5 peer-focus:text-foreground transition-colors">
@@ -139,9 +186,9 @@ export default function LoginPage() {
             </div>
 
             <div className="pt-2 flex flex-col gap-3">
-              <Button type="submit" size="lg" className="w-full h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
-                <LogInIcon className="size-4 me-2" />
-                Sign In as {role.charAt(0).toUpperCase() + role.slice(1)}
+              <Button type="submit" size="lg" disabled={isLoading} className="w-full h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <LogInIcon className={`size-4 me-2 ${isLoading ? 'animate-pulse' : ''}`} />
+                {isLoading ? 'Signing In...' : `Sign In as ${role.charAt(0).toUpperCase() + role.slice(1)}`}
               </Button>
               
               {role === 'student' && (

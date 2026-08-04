@@ -76,7 +76,7 @@ export class EnrollmentService {
   async submitEnrollment(data: any) {
     const { token, personalInfo, academicInfo, faceEmbedding } = data;
 
-    let enrollmentToken = null;
+    let enrollmentToken: any = null;
     if (token) {
       enrollmentToken = await this.prisma.enrollmentToken.findUnique({
         where: { token },
@@ -89,8 +89,12 @@ export class EnrollmentService {
 
     const rollNumber = personalInfo.rollNumber;
     const email = personalInfo.email;
-    const tempPassword = crypto.randomBytes(6).toString('hex');
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    
+    if (!personalInfo.password) {
+      throw new HttpException('Password is required', HttpStatus.BAD_REQUEST);
+    }
+    
+    const passwordHash = await bcrypt.hash(personalInfo.password, 10);
     const studentId = `STD${new Date().getFullYear()}${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
@@ -146,7 +150,6 @@ export class EnrollmentService {
       return {
         success: true,
         studentId: studentId,
-        tempPassword,
         name: personalInfo.fullName,
         rollNumber: personalInfo.rollNumber,
       };

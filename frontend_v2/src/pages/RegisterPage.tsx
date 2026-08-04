@@ -30,7 +30,8 @@ export default function RegisterPage() {
   // Form State
   const [personalInfo, setPersonalInfo] = useState({
     fullName: '', rollNumber: '', universityRegistrationNumber: '',
-    gender: 'MALE', dob: '', mobileNumber: '', email: '', bloodGroup: ''
+    gender: 'MALE', dob: '', mobileNumber: '', email: '', bloodGroup: '',
+    password: '', confirmPassword: ''
   });
   
   const [academicInfo, setAcademicInfo] = useState({
@@ -96,6 +97,14 @@ export default function RegisterPage() {
     if (step === 1) {
       if (!personalInfo.fullName || !personalInfo.rollNumber || !personalInfo.email || !personalInfo.mobileNumber || !personalInfo.dob || !personalInfo.universityRegistrationNumber) {
         setError('Please fill out all required fields marked with *');
+        return;
+      }
+      if (personalInfo.password !== personalInfo.confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+      if (personalInfo.password.length < 6) {
+        setError('Password must be at least 6 characters long');
         return;
       }
     }
@@ -383,6 +392,14 @@ export default function RegisterPage() {
                     <Label className="text-sm">University Registration No. <span className="text-destructive">*</span></Label>
                     <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.universityRegistrationNumber} onChange={e => setPersonalInfo({...personalInfo, universityRegistrationNumber: e.target.value})} placeholder="e.g. REG-2022-998811" />
                   </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Set Password <span className="text-destructive">*</span></Label>
+                    <Input type="password" className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.password} onChange={e => setPersonalInfo({...personalInfo, password: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Confirm Password <span className="text-destructive">*</span></Label>
+                    <Input type="password" className="h-11 bg-background/50 border-border/50 focus:bg-background" value={personalInfo.confirmPassword} onChange={e => setPersonalInfo({...personalInfo, confirmPassword: e.target.value})} />
+                  </div>
                 </div>
               </div>
             )}
@@ -622,12 +639,8 @@ export default function RegisterPage() {
                     <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Student ID</p>
                     <p className="font-mono text-xl font-bold tracking-tight">{successData.studentId}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Temporary Password</p>
-                    <p className="font-mono text-xl font-bold tracking-tight bg-muted/50 p-2.5 rounded-lg border border-border/50 text-center select-all">{successData.tempPassword}</p>
-                  </div>
-                  <p className="text-xs text-amber-500/90 font-medium mt-3 bg-amber-500/10 p-2 rounded flex items-center gap-2">
-                    <ShieldCheckIcon className="size-4" /> Please save this password. You will need it to log in.
+                  <p className="text-xs text-emerald-500/90 font-medium mt-3 bg-emerald-500/10 p-2 rounded flex items-center gap-2">
+                    <ShieldCheckIcon className="size-4" /> You can now log in with your email and password.
                   </p>
                 </div>
                 

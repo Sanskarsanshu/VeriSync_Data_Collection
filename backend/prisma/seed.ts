@@ -7,18 +7,18 @@ async function main() {
   console.log('Seeding database with VeriSync Phase 1 data...');
 
   // 1. Create the Admin User
-  const adminPasswordHash = await bcrypt.hash('Admin@81029', 10);
+  const adminPasswordHash = await bcrypt.hash('PWC@2025mcaHOD', 10);
   const adminUser = await prisma.user.upsert({
-    where: { email: 'sanskriti81029@gmail.com' },
+    where: { email: 'bhawna.mca@patnawomenscollege.in' },
     update: { passwordHash: adminPasswordHash },
     create: {
-      email: 'sanskriti81029@gmail.com',
+      email: 'bhawna.mca@patnawomenscollege.in',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
       status: 'ACTIVE',
       adminProfile: {
         create: {
-          name: 'Sanskriti (System Admin)'
+          name: 'Dr. Bhawna Sinha(HOD)'
         }
       }
     }
@@ -47,6 +47,37 @@ async function main() {
       status: 'ACTIVE',
     }
   });
+
+  // 3.5 Create Teacher Users
+  const teachers = [
+    { email: 'Richaverma.mca@pwc.in', pass: 'Richa@2025mca', name: 'Richa Verma', empId: 'EMP-001' },
+    { email: 'Praveenkumar.mca@pwc.in', pass: 'Praveen@2025mca', name: 'Praveen Kumar', empId: 'EMP-002' },
+    { email: 'Sushmitachakraborty.mca@pwc.in', pass: 'Sushmita@2025mca', name: 'Sushmita Chakraborty', empId: 'EMP-003' },
+    { email: 'Brajkishoreprasad.mca@pwc.in', pass: 'BKP@2025mca', name: 'Braj Kishore Prasad', empId: 'EMP-004' }
+  ];
+
+  for (const t of teachers) {
+    const hash = await bcrypt.hash(t.pass, 10);
+    const user = await prisma.user.upsert({
+      where: { email: t.email },
+      update: { passwordHash: hash },
+      create: {
+        email: t.email,
+        passwordHash: hash,
+        role: 'TEACHER',
+        status: 'ACTIVE',
+        teacherProfile: {
+          create: {
+            name: t.name,
+            employeeId: t.empId,
+            departmentId: department.id,
+            status: 'ACTIVE'
+          }
+        }
+      }
+    });
+    console.log('Teacher seeded:', user.email);
+  }
 
   // 4. Programme
   const programme = await prisma.programme.upsert({
