@@ -46,9 +46,16 @@ export default function ProtectedRoute({ requiredRole, children }: ProtectedRout
     async function verifySession() {
       try {
         const API_URL = import.meta.env.VITE_API_URL || '/api';
+        const token = sessionStorage.getItem('verisync_token');
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const res = await fetch(`${API_URL}/auth/me`, {
           method: 'GET',
           credentials: 'include', // sends the HttpOnly cookie automatically
+          headers,
         });
 
         if (cancelled) return;

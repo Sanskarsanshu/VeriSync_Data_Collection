@@ -43,6 +43,7 @@ export class AuthController {
       role: user.role,
       name: me.name,
       email: user.email,
+      access_token,
     };
   }
 

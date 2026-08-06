@@ -59,9 +59,19 @@ export const useAppStore = create<AppState>((set) => ({
     try {
       // Tell backend to clear the HttpOnly cookie
       const API_URL = import.meta.env.VITE_API_URL || '/api';
-      await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+      const token = sessionStorage.getItem('verisync_token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      await fetch(`${API_URL}/auth/logout`, { 
+        method: 'POST', 
+        credentials: 'include',
+        headers,
+      });
     } finally {
       sessionStorage.removeItem('verisync_user');
+      sessionStorage.removeItem('verisync_token');
       set({ user: null });
     }
   },

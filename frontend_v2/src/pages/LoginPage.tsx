@@ -51,6 +51,10 @@ export default function LoginPage() {
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
       }
+
+      if (data.access_token) {
+        sessionStorage.setItem('verisync_token', data.access_token);
+      }
       
       // Update global store with real name from backend
       setUser({
