@@ -39,27 +39,20 @@ export default function LoginPage() {
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/login', {
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       
-      const isHtml = response.headers.get('content-type')?.includes('text/html');
-      let data;
+      const data = await response.json();
       
-      if (isHtml || !response.ok) {
-        // Fallback for Vercel static deployment without a backend
-        data = {
-          role: role,
-          name: role === 'admin' ? 'Dr. Bhawna Sinha' : role === 'teacher' ? 'Dr. Jagadeesha R. B.' : 'Student Name',
-          email: email || `${role}@institution.edu`
-        };
-      } else {
-        data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
       }
       
-      // Update global store with real name from backend (or mock)
+      // Update global store with real name from backend
       setUser({
         id: 'auth-user',
         role: data.role.toLowerCase() as 'admin' | 'teacher' | 'student',

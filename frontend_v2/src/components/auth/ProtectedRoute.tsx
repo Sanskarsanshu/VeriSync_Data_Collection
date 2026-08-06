@@ -45,25 +45,22 @@ export default function ProtectedRoute({ requiredRole, children }: ProtectedRout
 
     async function verifySession() {
       try {
-        const res = await fetch('/api/auth/me', {
+        const API_URL = import.meta.env.VITE_API_URL || '/api';
+        const res = await fetch(`${API_URL}/auth/me`, {
           method: 'GET',
           credentials: 'include', // sends the HttpOnly cookie automatically
         });
 
         if (cancelled) return;
 
-        const isHtml = res.headers.get('content-type')?.includes('text/html');
+        if (res.status === 401) {
+          // Cookie missing or expired
+          setStatus('unauthorized');
+          return;
+        }
 
-        if (isHtml || !res.ok || res.status === 401) {
-          // Fallback for Vercel static deployment without a backend
-          // Allow access to the requested route for demo purposes
-          setUser({
-            id: 'mock-id',
-            role: requiredRole,
-            name: requiredRole === 'admin' ? 'Dr. Bhawna Sinha' : requiredRole === 'teacher' ? 'Dr. Jagadeesha R. B.' : 'Student Name',
-            email: `demo@${requiredRole}.edu`,
-          });
-          setStatus('authorized');
+        if (!res.ok) {
+          setStatus('unauthorized');
           return;
         }
 
