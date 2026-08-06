@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,17 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   
   const navigate = useNavigate();
+  const location = useLocation();
   const setUser = useAppStore((state) => state.setUser);
+
+  // Show a contextual banner when redirected here by ProtectedRoute
+  const redirectReason = (location.state as any)?.reason as string | undefined;
+  const redirectBanner =
+    redirectReason === 'forbidden'
+      ? '⛔ Access denied. You do not have permission to view that page.'
+      : redirectReason === 'unauthenticated'
+      ? '🔒 Please sign in to continue.'
+      : null;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,15 +51,17 @@ export default function LoginPage() {
         throw new Error(data.message || 'Login failed');
       }
       
-      // Update global store
+      // Update global store with real name from backend
       setUser({
-        id: 'auth-user', 
-        role: data.role.toLowerCase(),
-        name: email,
+        id: 'auth-user',
+        role: data.role.toLowerCase() as 'admin' | 'teacher' | 'student',
+        name: data.name || email,
+        email: data.email || email,
       });
-      
-      // Navigate to correct dashboard based on backend role
-      navigate(`/${data.role.toLowerCase()}`);
+
+      // Navigate to the originally requested page, or the role dashboard
+      const from = (location.state as any)?.from?.pathname;
+      navigate(from || `/${data.role.toLowerCase()}`, { replace: true });
     } catch (err: any) {
       setError(err.message || 'An error occurred during login');
     } finally {
@@ -135,6 +147,12 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
+            {/* Redirect banner from ProtectedRoute */}
+            {redirectBanner && !error && (
+              <div className="p-3 text-sm text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                {redirectBanner}
+              </div>
+            )}
             {error && (
               <div className="p-3 text-sm text-red-500 bg-red-500/10 rounded-xl border border-red-500/20">
                 {error}

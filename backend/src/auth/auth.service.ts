@@ -28,4 +28,35 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
     };
   }
+
+  /**
+   * Resolves the display name for the authenticated user.
+   * Checks adminProfile first, then teacherProfile.
+   * Called by the /auth/me endpoint to restore session on page load.
+   */
+  async getMe(userId: string): Promise<{ id: string; email: string; role: string; name: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        adminProfile: { select: { name: true } },
+        teacherProfile: { select: { name: true } },
+      },
+    });
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw new UnauthorizedException('Session invalid or account inactive.');
+    }
+
+    const name =
+      user.adminProfile?.name ??
+      user.teacherProfile?.name ??
+      user.email;
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name,
+    };
+  }
 }

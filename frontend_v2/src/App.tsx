@@ -2,11 +2,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LandingPage from '@/pages/LandingPage';
 import { ToastNotification } from '@/components/ui/toast-notification';
 import LoginPage from '@/pages/LoginPage';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+
+// Admin pages
 import AdminDashboard from '@/pages/admin/AdminDashboard';
-import TeacherDashboard from '@/pages/teacher/TeacherDashboard';
-import StudentDashboard from '@/pages/student/StudentDashboard';
 import StudentEnrollmentAdmin from '@/pages/admin/StudentEnrollmentAdmin';
-import RegisterPage from '@/pages/RegisterPage';
 import AdminStudents from '@/pages/admin/AdminStudents';
 import AdminTeachers from '@/pages/admin/AdminTeachers';
 import AdminSubjects from '@/pages/admin/AdminSubjects';
@@ -26,43 +26,72 @@ import AdminSettings from '@/pages/admin/AdminSettings';
 import AdminProfile from '@/pages/admin/AdminProfile';
 import AdminTeacherProfile from '@/pages/admin/AdminTeacherProfile';
 
+// Teacher pages
+import TeacherDashboard from '@/pages/teacher/TeacherDashboard';
+
+// Student pages
+import StudentDashboard from '@/pages/student/StudentDashboard';
+import RegisterPage from '@/pages/RegisterPage';
+
+/**
+ * AdminGuard / TeacherGuard — thin wrappers so we don't repeat requiredRole
+ * on every single route definition.
+ */
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute requiredRole="admin">{children}</ProtectedRoute>;
+}
+
+function TeacherGuard({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute requiredRole="teacher">{children}</ProtectedRoute>;
+}
+
 function App() {
   return (
     <Router>
       <ToastNotification />
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        
-        {/* Admin Routes */}
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/students" element={<AdminStudents />} />
-        <Route path="/admin/teachers" element={<AdminTeachers />} />
-        <Route path="/admin/teachers/:id" element={<AdminTeacherProfile />} />
-        <Route path="/admin/subjects" element={<AdminSubjects />} />
-        <Route path="/admin/college" element={<AdminCollege />} />
-        <Route path="/admin/courses" element={<AdminCourses />} />
-        <Route path="/admin/assignments" element={<AdminAssignments />} />
-        <Route path="/admin/authorizations" element={<AdminAuthorizations />} />
-        <Route path="/admin/holidays" element={<AdminHolidays />} />
-        <Route path="/admin/academic-calendar" element={<AdminAcademicCalendar />} />
-        <Route path="/admin/time-table" element={<AdminTimeTable />} />
-        <Route path="/admin/attendance-monitor" element={<AdminAttendanceMonitor />} />
-        <Route path="/admin/corrections" element={<AdminCorrections />} />
-        <Route path="/admin/sheets" element={<AdminSheets />} />
-        <Route path="/admin/reports" element={<AdminReports />} />
-        <Route path="/admin/security" element={<AdminSecurity />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
-        <Route path="/admin/profile" element={<AdminProfile />} />
-        <Route path="/admin/student-enrollment" element={<StudentEnrollmentAdmin />} />
-        
-        {/* Placeholder Teacher Routes */}
-        <Route path="/teacher" element={<TeacherDashboard />} />
-        
-        {/* Placeholder Student Routes */}
-        <Route path="/student" element={<StudentDashboard />} />
         <Route path="/register" element={<RegisterPage />} />
-        
+
+        {/* ────────────────────────────────────────────────────────────
+            ADMIN ROUTES — every route is wrapped in AdminGuard.
+            Typing /admin directly in the browser triggers a call to
+            GET /api/auth/me. If the cookie is missing or the role is
+            not ADMIN, the user is redirected to /login immediately.
+        ──────────────────────────────────────────────────────────── */}
+        <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+        <Route path="/admin/students" element={<AdminGuard><AdminStudents /></AdminGuard>} />
+        <Route path="/admin/teachers" element={<AdminGuard><AdminTeachers /></AdminGuard>} />
+        <Route path="/admin/teachers/:id" element={<AdminGuard><AdminTeacherProfile /></AdminGuard>} />
+        <Route path="/admin/subjects" element={<AdminGuard><AdminSubjects /></AdminGuard>} />
+        <Route path="/admin/college" element={<AdminGuard><AdminCollege /></AdminGuard>} />
+        <Route path="/admin/courses" element={<AdminGuard><AdminCourses /></AdminGuard>} />
+        <Route path="/admin/assignments" element={<AdminGuard><AdminAssignments /></AdminGuard>} />
+        <Route path="/admin/authorizations" element={<AdminGuard><AdminAuthorizations /></AdminGuard>} />
+        <Route path="/admin/holidays" element={<AdminGuard><AdminHolidays /></AdminGuard>} />
+        <Route path="/admin/academic-calendar" element={<AdminGuard><AdminAcademicCalendar /></AdminGuard>} />
+        <Route path="/admin/time-table" element={<AdminGuard><AdminTimeTable /></AdminGuard>} />
+        <Route path="/admin/attendance-monitor" element={<AdminGuard><AdminAttendanceMonitor /></AdminGuard>} />
+        <Route path="/admin/corrections" element={<AdminGuard><AdminCorrections /></AdminGuard>} />
+        <Route path="/admin/sheets" element={<AdminGuard><AdminSheets /></AdminGuard>} />
+        <Route path="/admin/reports" element={<AdminGuard><AdminReports /></AdminGuard>} />
+        <Route path="/admin/security" element={<AdminGuard><AdminSecurity /></AdminGuard>} />
+        <Route path="/admin/settings" element={<AdminGuard><AdminSettings /></AdminGuard>} />
+        <Route path="/admin/profile" element={<AdminGuard><AdminProfile /></AdminGuard>} />
+        <Route path="/admin/student-enrollment" element={<AdminGuard><StudentEnrollmentAdmin /></AdminGuard>} />
+
+        {/* ────────────────────────────────────────────────────────────
+            TEACHER ROUTES — wrapped in TeacherGuard.
+            A teacher cannot access /admin routes and vice-versa.
+        ──────────────────────────────────────────────────────────── */}
+        <Route path="/teacher" element={<TeacherGuard><TeacherDashboard /></TeacherGuard>} />
+
+        {/* Student routes (no guard yet — add StudentGuard when ready) */}
+        <Route path="/student" element={<StudentDashboard />} />
+
+        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

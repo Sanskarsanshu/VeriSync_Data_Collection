@@ -117,7 +117,7 @@ export default function AdminTimeTable() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {currentData.days.map((dayData, idx) => (
+                  {currentData.days.map((dayData: any, idx: number) => (
                     <tr key={idx} className="hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-4 border-r font-medium text-foreground sticky left-0 bg-card/95 backdrop-blur-sm z-10 text-center align-middle shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                         {dayData.day}
@@ -134,7 +134,7 @@ export default function AdminTimeTable() {
                           );
                         }
 
-                        const cellData = dayData.periods.find(p => p.period === periodConfig.id);
+                        const cellData = dayData.periods.find((p: any) => p.period === periodConfig.id);
                         const hasData = cellData && (cellData.subjectCode || cellData.activity);
                         
                         return (

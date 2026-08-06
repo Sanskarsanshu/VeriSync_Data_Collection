@@ -18,8 +18,10 @@ interface AppState {
     id: string;
     role: 'admin' | 'teacher' | 'student';
     name: string;
+    email?: string;
   } | null;
   setUser: (user: AppState['user']) => void;
+  logout: () => Promise<void>;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   notifications: AppNotification[];
@@ -29,12 +31,40 @@ interface AppState {
   clearLatestNotification: () => void;
 }
 
+// Rehydrate user from sessionStorage for immediate UI render on hard refresh.
+// The ProtectedRoute still verifies with /api/auth/me on every mount for true security.
+const persistedUser = (() => {
+  try {
+    const raw = sessionStorage.getItem('verisync_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+})();
+
 export const useAppStore = create<AppState>((set) => ({
   isSidebarOpen: true,
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
-  user: null,
-  setUser: (user) => set({ user }),
-  theme: (localStorage.getItem('theme') as 'light' | 'dark') || 
+  user: persistedUser,
+  setUser: (user) => {
+    // Persist to sessionStorage so role survives F5 refresh while tab is open
+    if (user) {
+      sessionStorage.setItem('verisync_user', JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem('verisync_user');
+    }
+    set({ user });
+  },
+  logout: async () => {
+    try {
+      // Tell backend to clear the HttpOnly cookie
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } finally {
+      sessionStorage.removeItem('verisync_user');
+      set({ user: null });
+    }
+  },
+  theme: (localStorage.getItem('theme') as 'light' | 'dark') ||
          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
   toggleTheme: () => set((state) => {
     const newTheme = state.theme === 'light' ? 'dark' : 'light';
@@ -52,7 +82,7 @@ export const useAppStore = create<AppState>((set) => ({
       title: 'Suspicious Activity Detected',
       message: 'Multiple manual overrides requested in MCA Semester I within 5 minutes.',
       type: 'warning',
-      timestamp: new Date(Date.now() - 10 * 60000), // 10 mins ago
+      timestamp: new Date(Date.now() - 10 * 60000),
       read: false
     },
     {
@@ -60,7 +90,7 @@ export const useAppStore = create<AppState>((set) => ({
       title: 'Attendance Shortage',
       message: '45 students have fallen below the 75% threshold this week.',
       type: 'info',
-      timestamp: new Date(Date.now() - 2 * 3600000), // 2 hours ago
+      timestamp: new Date(Date.now() - 2 * 3600000),
       read: false
     }
   ],
@@ -84,7 +114,7 @@ export const useAppStore = create<AppState>((set) => ({
 }));
 
 // Initialize theme on load
-if (localStorage.getItem('theme') === 'dark' || 
+if (localStorage.getItem('theme') === 'dark' ||
     (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
   document.documentElement.classList.add('dark');
 } else {
