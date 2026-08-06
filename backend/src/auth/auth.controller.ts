@@ -27,11 +27,11 @@ export class AuthController {
 
     const { access_token } = await this.authService.login(user);
 
-    // Set the HttpOnly cookie — cannot be read by JS (XSS-proof)
+    // Set the HttpOnly cookie — sameSite 'none' is required for Vercel -> Render cross-domain requests
     response.cookie('verisync_session', access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Must be true when sameSite is 'none'
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -63,7 +63,11 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) response: Response) {
-    response.clearCookie('verisync_session');
+    response.clearCookie('verisync_session', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
     return { message: 'Logged out successfully' };
   }
 }

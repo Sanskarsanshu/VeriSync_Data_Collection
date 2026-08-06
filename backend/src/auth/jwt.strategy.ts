@@ -7,15 +7,12 @@ import { Request } from 'express';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
     super({
-      // Extract JWT from the 'verisync_session' HttpOnly cookie
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
           let data = request?.cookies?.['verisync_session'];
-          if (!data) {
-            return null;
-          }
-          return data;
+          return data || null;
         },
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'fallback-secret-for-dev',
