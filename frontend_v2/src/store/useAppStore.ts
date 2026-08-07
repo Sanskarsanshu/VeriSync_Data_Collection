@@ -43,7 +43,7 @@ const persistedUser = (() => {
 })();
 
 export const useAppStore = create<AppState>((set) => ({
-  isSidebarOpen: true,
+  isSidebarOpen: window.innerWidth >= 768,
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   user: persistedUser,
   setUser: (user) => {
