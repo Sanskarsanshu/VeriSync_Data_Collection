@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { 
   Users, Search, Filter, AlertCircle, Edit, Eye, Trash2, Fingerprint,
@@ -7,6 +7,7 @@ import {
 import { AnimatedRadialChart } from '@/components/ui/animated-radial-chart';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { useAppStore } from '@/store/useAppStore';
+import { useDataStore, Student } from '@/store/useDataStore';
 
 // --- Helper functions for Mock Data ---
 const MONTHS_LATEST_FIRST = ['July','June','May','April','March','February','January'];
@@ -65,25 +66,7 @@ const RAW_STUDENTS = [
   {name:'Riya Kumari',   roll:'MCA038', course:'EC202', seed:66, verification:'Not verified', time:'—'},
 ];
 
-type Student = {
-  id: string;
-  name: string;
-  roll: string;
-  course: string;
-  examRoll: string;
-  regNo: string;
-  session: string;
-  classText: string;
-  color: string;
-  status: string;
-  verification: string;
-  time: string;
-  monthly: any;
-  matrix: any;
-  faceEnrolled: boolean;
-  attendance: number;
-};
-
+// Using Student from store
 const mockStudents: Student[] = RAW_STUDENTS
   .map((s,i)=>({
     id:'s'+i,
@@ -303,13 +286,31 @@ const DetailView = ({ student, onBack }: { student: Student, onBack: () => void 
 
 
 export default function AdminStudents() {
+  const { students: rawStudents, fetchStudents, deleteStudent } = useDataStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [detailedStudentId, setDetailedStudentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
+
+  // Merge backend data with mock matrix and monthly data
+  const students = React.useMemo(() => {
+    return rawStudents.map((s: Student, i: number) => {
+      const seed = 80 + (i % 15);
+      return {
+        ...s,
+        monthly: makeMonthly(seed),
+        matrix: makeMatrix(seed),
+      };
+    });
+  }, [rawStudents]);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 
   const confirmDelete = () => {
     if (!studentToDelete) return;
+    deleteStudent(studentToDelete.id);
     useAppStore.getState().addNotification({
       title: 'Student Removed',
       message: `Student ${studentToDelete.name} has been permanently removed.`,
@@ -413,7 +414,7 @@ export default function AdminStudents() {
                           </div>
                           <div>
                             <p className="font-semibold text-foreground group-hover:text-emerald-500 transition-colors">{student.name}</p>
-                            <p className="text-xs text-muted-foreground">{student.id}</p>
+                            <p className="text-xs text-muted-foreground">{student.regNo || student.id}</p>
                           </div>
                         </div>
                       </td>

@@ -180,5 +180,31 @@ export const teacherProfilesData: Record<string, TeacherProfile> = {
       'International Patent on 5G Based Remotely Controlled IOT Street Lamp for a UK Design',
       'Indian Utility Patent Publication on Blockchain-Based Digital Identity Verification System'
     ]
+  },
+  'FAC2024': {
+    id: 'FAC2024',
+    name: 'Dr. Bhawna Sinha',
+    gender: 'Female',
+    designation: 'Professor & Head of Department (HOD)',
+    department: 'Computer Applications (MCA)',
+    qualifications: 'Ph.D, MCA, M.Sc',
+    email: 'Bhawnasinha.mca@pwc.in',
+    image: '/features/Bhawnasinha.png',
+    workExperience: [
+      { role: 'Head of Department (MCA)', org: 'Patna Women’s College', duration: '2010 - Present' },
+      { role: 'Professor', org: 'Patna Women’s College', duration: '2005 - Present' }
+    ],
+    committees: [
+      'Chairperson, Board of Studies (BOS) for MCA & BCA',
+      'Academic Council Member, Patna University'
+    ],
+    achievements: [
+      'Excellence in Academic Leadership Award',
+      '20+ Years of Distinguished Teaching Service'
+    ],
+    publications: [
+      { title: 'Advanced Computing and Intelligent Systems', book: 'Tech Press', year: 2021 },
+      { title: 'Research Trends in Machine Learning and AI', journal: 'International Journal of Advanced Research in Computer Science', year: 2023 }
+    ]
   }
 };

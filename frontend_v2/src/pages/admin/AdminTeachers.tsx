@@ -16,8 +16,12 @@ import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { useDataStore, Teacher } from '@/store/useDataStore';
 
 export default function AdminTeachers() {
-  const { teachers, addTeacher, updateTeacher, deleteTeacher } = useDataStore();
+  const { teachers, addTeacher, updateTeacher, deleteTeacher, fetchTeachers } = useDataStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchTeachers();
+  }, [fetchTeachers]);
 
 
   const [searchTerm, setSearchTerm] = useState('');

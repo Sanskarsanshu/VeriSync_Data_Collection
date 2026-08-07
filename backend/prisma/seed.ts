@@ -79,6 +79,41 @@ async function main() {
     console.log('Teacher seeded:', user.email);
   }
 
+  // 3.8 Subjects
+  const subjectsData = [
+    // Semester 1
+    { code: 'CC101', name: 'Software Engineering', credits: 5, isPractical: false },
+    { code: 'CC102', name: 'Advanced Database Management System', credits: 5, isPractical: true },
+    { code: 'CC103', name: 'Design & Analysis of Algorithm', credits: 5, isPractical: false },
+    { code: 'CC104', name: 'Data Communications & Computer Networks', credits: 5, isPractical: true },
+    { code: 'CC105', name: 'Python Programming', credits: 5, isPractical: true },
+    { code: 'SEC101', name: 'Data Visualization', credits: 3, isPractical: true },
+    { code: 'MAEC101', name: 'Environmental Sustainability', credits: 5, isPractical: true },
+
+    // Semester 2
+    { code: 'CC206', name: 'Web Technology using .NET', credits: 5, isPractical: true },
+    { code: 'CC207', name: 'Data & Web Mining', credits: 5, isPractical: false },
+    { code: 'CC208', name: 'Artificial Intelligence and Machine Learning', credits: 5, isPractical: true },
+    { code: 'CC209', name: 'Mini Project I (Lab)', credits: 3, isPractical: true },
+    { code: 'MDC201', name: 'Optimization Techniques', credits: 5, isPractical: false },
+    { code: 'DSE201', name: 'Elective-1', credits: 5, isPractical: false },
+    { code: 'SEC202', name: 'Statistical Analysis using R', credits: 3, isPractical: true },
+
+    // Semester 3
+    { code: 'CC310', name: 'Advanced Web Designing using J2EE', credits: 5, isPractical: true },
+    { code: 'CC311', name: 'Cloud Computing', credits: 5, isPractical: false },
+    { code: 'CC312', name: 'Big Data Analytics', credits: 5, isPractical: false },
+    { code: 'CC313', name: 'Mini Project II (Lab)', credits: 3, isPractical: true },
+    { code: 'MDC302', name: 'Digital Marketing and E-Commerce', credits: 5, isPractical: false },
+    { code: 'MAEC302', name: 'Human Values & Professional Ethics', credits: 5, isPractical: true },
+    { code: 'SEC303', name: 'Industrial Visit and Technical Report Writing', credits: 3, isPractical: true },
+
+    // Semester 4
+    { code: 'DSE402', name: 'MOOCs', credits: 5, isPractical: false },
+    { code: 'CC414', name: 'OJT and Project Dissertation', credits: 22, isPractical: true },
+    { code: 'SEC404', name: 'Industrial Training and Internship', credits: 3, isPractical: true },
+  ];
+
   // 4. Programme
   const programme = await prisma.programme.upsert({
     where: { shortName: 'MCA' },
@@ -92,6 +127,21 @@ async function main() {
       status: 'ACTIVE',
     }
   });
+
+  // Create Subjects linked to Programme
+  for (const sub of subjectsData) {
+    await prisma.subject.upsert({
+      where: { code: sub.code },
+      update: {},
+      create: {
+        code: sub.code,
+        name: sub.name,
+        credits: sub.credits,
+        isPractical: sub.isPractical,
+        programmeId: programme.id,
+      }
+    });
+  }
 
   // 5. Academic Session
   const session = await prisma.academicSession.create({
@@ -130,6 +180,53 @@ async function main() {
       status: 'ACTIVE',
     }
   });
+
+  // 6.5 Students
+  const RAW_STUDENTS = [
+    {name:'Ananya Singh',  roll:'MCA030', email: 'ananya.mca@pwc.in'},
+    {name:'Garima Gupta',  roll:'MCA031', email: 'garima.mca@pwc.in'},
+    {name:'Harshita Jha',  roll:'MCA032', email: 'harshita.mca@pwc.in'},
+    {name:'Komal Kumari',  roll:'MCA033', email: 'komal.mca@pwc.in'},
+    {name:'Mahi Verma',    roll:'MCA034', email: 'mahi.mca@pwc.in'},
+    {name:'Neha Sinha',    roll:'MCA035', email: 'neha.mca@pwc.in'},
+    {name:'Pallavi Roy',   roll:'MCA036', email: 'pallavi.mca@pwc.in'},
+    {name:'Pooja Sharma',  roll:'MCA037', email: 'pooja.mca@pwc.in'},
+    {name:'Riya Kumari',   roll:'MCA038', email: 'riya.mca@pwc.in'},
+  ];
+
+  for (const s of RAW_STUDENTS) {
+    const hash = await bcrypt.hash('Welcome@123', 10);
+    const examRoll = '25' + s.roll.replace('MCA', 'MCA0');
+    const regNo = '25PWC0' + s.roll.replace(/[^0-9]/g, '');
+    
+    await prisma.user.upsert({
+      where: { email: s.email },
+      update: { passwordHash: hash },
+      create: {
+        email: s.email,
+        passwordHash: hash,
+        role: 'STUDENT',
+        status: 'ACTIVE',
+        studentProfile: {
+          create: {
+            name: s.name,
+            rollNumber: s.roll,
+            registrationNumber: regNo,
+            batchId: batch.id,
+            sectionId: section.id,
+            status: 'ACTIVE',
+            profile: {
+              create: {
+                admissionYear: 2025,
+                expectedGraduationYear: 2027
+              }
+            }
+          }
+        }
+      }
+    });
+    console.log('Student seeded:', s.email);
+  }
 
   // 7. Academic Calendar 2026-2027
   const calendar = await prisma.academicCalendar.create({

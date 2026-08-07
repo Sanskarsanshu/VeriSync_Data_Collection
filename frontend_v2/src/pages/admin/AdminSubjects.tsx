@@ -12,8 +12,11 @@ import { useAppStore } from '@/store/useAppStore';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function AdminSubjects() {
-  const { subjects, addSubject, updateSubject, deleteSubject } = useDataStore();
-  // Load from localStorage to persist data
+  const { subjects, addSubject, updateSubject, deleteSubject, fetchSubjects } = useDataStore();
+  
+  useEffect(() => {
+    fetchSubjects();
+  }, [fetchSubjects]);
 
 
   const [searchTerm, setSearchTerm] = useState('');

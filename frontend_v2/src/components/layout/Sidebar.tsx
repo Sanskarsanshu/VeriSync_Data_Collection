@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Users, BookOpen, Clock, 
   Calendar, ShieldCheck, Settings, Fingerprint 
 } from 'lucide-react';
+import { useAppStore } from '@/store/useAppStore';
 
 interface SidebarProps {
   role: 'admin' | 'teacher' | 'student';
