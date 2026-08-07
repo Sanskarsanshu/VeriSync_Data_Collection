@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useDataStore } from '@/store/useDataStore';
 import { useAppStore } from '@/store/useAppStore';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function AdminAssignments() {
   const { teachers, subjects, updateTeacher } = useDataStore();
@@ -14,6 +15,7 @@ export default function AdminAssignments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedSubjectCode, setSelectedSubjectCode] = useState('');
+  const [assignmentToDelete, setAssignmentToDelete] = useState<any | null>(null);
 
   // Dynamically generate the active assignments table
   const activeAssignments = useMemo(() => {
@@ -111,6 +113,12 @@ export default function AdminAssignments() {
     });
 
     addNotification({ title: 'Assignment Removed', message: `${subject.code} has been unassigned from ${teacher.name}.`, type: 'info' });
+  };
+
+  const confirmDelete = () => {
+    if (!assignmentToDelete) return;
+    handleDeleteAssignment(assignmentToDelete.teacherId, assignmentToDelete.subjectCode);
+    setAssignmentToDelete(null);
   };
 
   return (
@@ -227,7 +235,7 @@ export default function AdminAssignments() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button 
-                            onClick={() => handleDeleteAssignment(assignment.teacherId, assignment.subjectCode)}
+                            onClick={() => setAssignmentToDelete(assignment)}
                             className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors opacity-0 group-hover:opacity-100"
                             title="Remove Assignment"
                           >
@@ -244,6 +252,15 @@ export default function AdminAssignments() {
           
         </div>
       </div>
+      
+      {/* Delete Confirmation */}
+      <ConfirmDeleteModal
+        isOpen={!!assignmentToDelete}
+        onClose={() => setAssignmentToDelete(null)}
+        onConfirm={confirmDelete}
+        itemName={assignmentToDelete?.subject}
+        itemType="Assignment"
+      />
     </DashboardLayout>
   );
 }

@@ -5,6 +5,8 @@ import {
   ArrowUp, ArrowLeft, Download
 } from 'lucide-react';
 import { AnimatedRadialChart } from '@/components/ui/animated-radial-chart';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
+import { useAppStore } from '@/store/useAppStore';
 
 // --- Helper functions for Mock Data ---
 const MONTHS_LATEST_FIRST = ['July','June','May','April','March','February','January'];
@@ -304,6 +306,17 @@ export default function AdminStudents() {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [detailedStudentId, setDetailedStudentId] = useState<string | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+
+  const confirmDelete = () => {
+    if (!studentToDelete) return;
+    useAppStore.getState().addNotification({
+      title: 'Student Removed',
+      message: `Student ${studentToDelete.name} has been permanently removed.`,
+      type: 'error'
+    });
+    setStudentToDelete(null);
+  };
 
   const filteredStudents = mockStudents.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -441,7 +454,7 @@ export default function AdminStudents() {
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button className="p-2 hover:bg-muted text-muted-foreground hover:text-emerald-500 rounded-lg transition-colors" onClick={(e) => { e.stopPropagation(); setDetailedStudentId(student.id); }}><Eye size={16} /></button>
                           <button className="p-2 hover:bg-muted text-muted-foreground hover:text-blue-500 rounded-lg transition-colors" onClick={(e) => e.stopPropagation()}><Edit size={16} /></button>
-                          <button className="p-2 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-colors" onClick={(e) => e.stopPropagation()}><Trash2 size={16} /></button>
+                          <button className="p-2 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-colors" onClick={(e) => { e.stopPropagation(); setStudentToDelete(student); }}><Trash2 size={16} /></button>
                         </div>
                       </td>
                     </tr>
@@ -485,6 +498,15 @@ export default function AdminStudents() {
           </div>
         </div>
       </div>
+      
+      {/* Delete Confirmation */}
+      <ConfirmDeleteModal
+        isOpen={!!studentToDelete}
+        onClose={() => setStudentToDelete(null)}
+        onConfirm={confirmDelete}
+        itemName={studentToDelete?.name}
+        itemType="Student"
+      />
     </DashboardLayout>
   );
 }

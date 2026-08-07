@@ -4,6 +4,8 @@ import {
   Palmtree, Calendar as CalendarIcon, Plus, Trash2, CalendarCheck2, History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
+import { useAppStore } from '@/store/useAppStore';
 
 const mockHolidays = [
   { id: '1', name: 'Kabir Jayanti', date: '2026-06-29', type: 'OFFICIAL_HOLIDAY' },
@@ -83,7 +85,7 @@ const groupByMonth = (holidays: typeof mockHolidays) => {
   return groups;
 };
 
-const HolidayTable = ({ items }: { items: typeof mockHolidays }) => (
+const HolidayTable = ({ items, onDelete }: { items: typeof mockHolidays, onDelete: (holiday: any) => void }) => (
   <div className="overflow-x-auto rounded-xl border border-border/50 bg-card shadow-sm mb-6">
     <table className="w-full text-sm text-left">
       <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border/50">
@@ -105,7 +107,10 @@ const HolidayTable = ({ items }: { items: typeof mockHolidays }) => (
               </span>
             </td>
             <td className="px-6 py-3 text-right">
-              <button className="p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors opacity-0 group-hover:opacity-100">
+              <button 
+                onClick={() => onDelete(holiday)}
+                className="p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors opacity-0 group-hover:opacity-100"
+              >
                 <Trash2 size={14} />
               </button>
             </td>
@@ -116,7 +121,18 @@ const HolidayTable = ({ items }: { items: typeof mockHolidays }) => (
   </div>
 );
 
-export default function AdminHolidays() {
+  const [holidayToDelete, setHolidayToDelete] = useState<any | null>(null);
+
+  const confirmDelete = () => {
+    if (!holidayToDelete) return;
+    useAppStore.getState().addNotification({
+      title: 'Holiday Removed',
+      message: `${holidayToDelete.name} has been removed from the calendar.`,
+      type: 'error'
+    });
+    setHolidayToDelete(null);
+  };
+
   const upcomingHolidays = mockHolidays.filter(h => !isPassed(h.date));
   const completedHolidays = mockHolidays.filter(h => isPassed(h.date));
 
@@ -181,7 +197,7 @@ export default function AdminHolidays() {
                     <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 pl-2">
                       {month}
                     </h3>
-                    <HolidayTable items={items} />
+                    <HolidayTable items={items} onDelete={setHolidayToDelete} />
                   </div>
                 ))
               )}
@@ -203,7 +219,7 @@ export default function AdminHolidays() {
                     <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 pl-2">
                       {month}
                     </h3>
-                    <HolidayTable items={items} />
+                    <HolidayTable items={items} onDelete={setHolidayToDelete} />
                   </div>
                 ))
               )}
@@ -213,6 +229,15 @@ export default function AdminHolidays() {
           
         </div>
       </div>
+      
+      {/* Delete Confirmation */}
+      <ConfirmDeleteModal
+        isOpen={!!holidayToDelete}
+        onClose={() => setHolidayToDelete(null)}
+        onConfirm={confirmDelete}
+        itemName={holidayToDelete?.name}
+        itemType="Holiday"
+      />
     </DashboardLayout>
   );
 }

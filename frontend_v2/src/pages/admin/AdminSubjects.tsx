@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useDataStore, Subject } from '@/store/useDataStore';
 import { useAppStore } from '@/store/useAppStore';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function AdminSubjects() {
   const { subjects, addSubject, updateSubject, deleteSubject } = useDataStore();
@@ -25,6 +26,7 @@ export default function AdminSubjects() {
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
 
   const { addNotification } = useAppStore();
 
@@ -89,13 +91,20 @@ export default function AdminSubjects() {
 
   const handleDelete = (code: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteSubject(code);
+    const subject = subjects.find(s => s.code === code);
+    if (subject) setSubjectToDelete(subject);
+  };
+
+  const confirmDelete = () => {
+    if (!subjectToDelete) return;
+    deleteSubject(subjectToDelete.code);
     addNotification({
       title: 'Subject Deleted',
-      message: `Subject ${code} has been permanently removed.`,
+      message: `Subject ${subjectToDelete.code} has been permanently removed.`,
       type: 'error'
     });
-    if (selectedSubject?.code === code) setIsDetailsModalOpen(false);
+    if (selectedSubject?.code === subjectToDelete.code) setIsDetailsModalOpen(false);
+    setSubjectToDelete(null);
   };
 
   return (
@@ -337,6 +346,15 @@ export default function AdminSubjects() {
             </div>
           </Modal>
         )}
+        
+        {/* Delete Confirmation */}
+        <ConfirmDeleteModal
+          isOpen={!!subjectToDelete}
+          onClose={() => setSubjectToDelete(null)}
+          onConfirm={confirmDelete}
+          itemName={subjectToDelete?.name}
+          itemType="Subject"
+        />
       </div>
     </DashboardLayout>
   );

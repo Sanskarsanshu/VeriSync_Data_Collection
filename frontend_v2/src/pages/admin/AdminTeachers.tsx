@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/useAppStore';
 import { teacherProfilesData } from '@/data/teacherProfiles';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 import { useDataStore, Teacher } from '@/store/useDataStore';
 
@@ -31,6 +32,7 @@ export default function AdminTeachers() {
   // New states for the requested interaction
   const [selectedActionTeacher, setSelectedActionTeacher] = useState<Teacher | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null);
 
   const { addNotification } = useAppStore();
 
@@ -112,12 +114,19 @@ export default function AdminTeachers() {
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteTeacher(id);
+    const teacher = teachers.find(t => t.id === id);
+    if (teacher) setTeacherToDelete(teacher);
+  };
+
+  const confirmDelete = () => {
+    if (!teacherToDelete) return;
+    deleteTeacher(teacherToDelete.id);
     addNotification({
       title: 'Teacher Removed',
-      message: `Employee ${id} has been permanently removed.`,
+      message: `Employee ${teacherToDelete.name} has been permanently removed.`,
       type: 'error'
     });
+    setTeacherToDelete(null);
   };
 
   return (
@@ -479,6 +488,15 @@ export default function AdminTeachers() {
             </div>
           </div>
         </Modal>
+
+        {/* Delete Confirmation */}
+        <ConfirmDeleteModal
+          isOpen={!!teacherToDelete}
+          onClose={() => setTeacherToDelete(null)}
+          onConfirm={confirmDelete}
+          itemName={teacherToDelete?.name}
+          itemType="Teacher"
+        />
 
       </div>
     </DashboardLayout>
