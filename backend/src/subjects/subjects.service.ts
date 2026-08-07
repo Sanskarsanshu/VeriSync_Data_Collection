@@ -30,13 +30,14 @@ export class SubjectsService {
   }
 
   async create(data: any) {
+    const programme = await this.prisma.programme.findFirst();
     const subject = await this.prisma.subject.create({
       data: {
         code: data.code,
         name: data.name,
         credits: typeof data.credits === 'string' ? parseInt(data.credits, 10) || 3 : data.credits || 3,
-        type: data.type || 'Theory',
-        category: data.category || 'Core'
+        isPractical: data.type === 'Practical' || data.type === 'Theory + Practical',
+        programmeId: programme?.id || ''
       }
     });
 
@@ -45,13 +46,13 @@ export class SubjectsService {
       code: subject.code,
       name: subject.name,
       credits: subject.credits,
-      type: subject.type,
-      category: subject.category,
+      type: data.type || 'Theory',
+      category: data.category || 'Core',
       semester: '1',
       weeklyClasses: 4,
       dept: 'MCA',
       status: 'Active',
-      createdAt: subject.createdAt.toISOString().split('T')[0],
+      createdAt: new Date().toISOString().split('T')[0],
       endDate: '-'
     };
   }
@@ -61,9 +62,8 @@ export class SubjectsService {
       where: { id },
       data: {
         name: data.name,
-        type: data.type,
-        category: data.category,
-        credits: typeof data.credits === 'string' ? parseInt(data.credits, 10) || 3 : data.credits
+        credits: typeof data.credits === 'string' ? parseInt(data.credits, 10) || 3 : data.credits,
+        isPractical: data.type ? (data.type === 'Practical' || data.type === 'Theory + Practical') : undefined
       }
     });
     return {
@@ -71,13 +71,13 @@ export class SubjectsService {
       code: subject.code,
       name: subject.name,
       credits: subject.credits,
-      type: subject.type,
-      category: subject.category,
+      type: subject.isPractical ? 'Theory + Practical' : 'Theory',
+      category: data.category || 'Core',
       semester: data.semester || '1',
       weeklyClasses: data.weeklyClasses || 4,
       dept: data.dept || 'MCA',
       status: data.status || 'Active',
-      createdAt: subject.createdAt.toISOString().split('T')[0],
+      createdAt: new Date().toISOString().split('T')[0],
       endDate: data.endDate || '-'
     };
   }

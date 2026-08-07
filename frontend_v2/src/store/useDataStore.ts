@@ -73,23 +73,24 @@ interface DataState {
   deleteStudent: (id: string) => Promise<void>;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
-
-const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
+export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
   const token = sessionStorage.getItem('verisync_token');
   const headers = new Headers(options.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (options.body && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
   
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  headers.set('Content-Type', 'application/json');
+
+  const res = await fetch(`http://localhost:3001${endpoint}`, {
     ...options,
-    credentials: 'include',
     headers
   });
+
+  if (!res.ok) {
+    throw new Error(`API Error: ${res.statusText}`);
+  }
   
-  if (!res.ok) throw new Error(`API error: ${res.statusText}`);
   return res.json();
 };
 

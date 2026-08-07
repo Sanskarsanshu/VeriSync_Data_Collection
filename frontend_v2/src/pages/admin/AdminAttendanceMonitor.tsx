@@ -31,7 +31,7 @@ export default function AdminAttendanceMonitor() {
   };
 
   // --- SIMULATION ENGINE ---
-  const handleSimulateStartClass = () => {
+  const handleSimulateStartClass = async () => {
     // Pick a random teacher who has subjects
     const teachersWithSubjects = teachers.filter(t => t.semesterSubjects && Object.keys(t.semesterSubjects).length > 0);
     if (teachersWithSubjects.length === 0) return;
@@ -44,17 +44,26 @@ export default function AdminAttendanceMonitor() {
     const subject = subjects.find(s => s.code === randomSubCode);
 
     if (subject) {
-      startSession({
-        course: `${subject.code} - ${subject.name}`,
-        teacher: randomTeacher.name,
-        section: `MCA Sem-${randomSem}`,
-        type: Math.random() > 0.5 ? 'FACE + QR' : 'FACE + OTP',
-        total: randomSem === '1' ? 60 : 50,
-      });
+      try {
+        const { fetchWithAuth } = await import('@/store/useDataStore');
+        const res = await fetchWithAuth('/attendance/simulate-class', {
+          method: 'POST',
+          body: JSON.stringify({ courseId: subject.code })
+        });
+        
+        startSession({
+          id: res.sessionId, // Real backend ID
+          course: `${subject.code} - ${subject.name}`,
+          teacher: randomTeacher.name,
+          section: `MCA Sem-${randomSem}`,
+          type: Math.random() > 0.5 ? 'FACE + QR' : 'FACE + OTP',
+          total: randomSem === '1' ? 60 : 50,
+        } as any);
+      } catch (e) { console.error(e); }
     }
   };
 
-  const handleSimulateScan = () => {
+  const handleSimulateScan = async () => {
     if (activeSessions.length === 0) return;
     // Pick random active session
     const session = activeSessions[Math.floor(Math.random() * activeSessions.length)];
@@ -64,7 +73,14 @@ export default function AdminAttendanceMonitor() {
     const name = mockNames[Math.floor(Math.random() * mockNames.length)];
     const type = Math.random() > 0.3 ? 'verified' : 'otp';
     
-    logScan(session.id, name, type as 'verified' | 'otp');
+    try {
+      const { fetchWithAuth } = await import('@/store/useDataStore');
+      await fetchWithAuth('/attendance/log-scan', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: session.id, name, type })
+      });
+      logScan(session.id, name, type as 'verified' | 'otp');
+    } catch (e) { console.error(e); }
   };
 
   const handleSimulateAnomaly = () => {

@@ -112,7 +112,7 @@ export class TeachersService {
     });
 
     return {
-      id: user.teacherProfile.id,
+      id: user.teacherProfile?.id || user.id,
       name: data.name,
       dept: data.dept || 'Department of Computer Applications',
       designation: data.designation || 'Assistant Professor',

@@ -11,9 +11,10 @@ import { EnrollmentModule } from './enrollment/enrollment.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { StudentsModule } from './students/students.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
-  imports: [CalendarModule, AuthModule, TimetableModule, AdminModule, EnrollmentModule, TeachersModule, SubjectsModule, StudentsModule],
+  imports: [CalendarModule, AuthModule, TimetableModule, AdminModule, EnrollmentModule, TeachersModule, SubjectsModule, StudentsModule, AttendanceModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

@@ -25,35 +25,6 @@ function initials(name: string){
   return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
 }
 
-function makeMonthly(seedPresent: number){
-  const out: any = {};
-  MONTHS_LATEST_FIRST.forEach((m,i)=>{
-    const present = Math.max(55, Math.min(97, seedPresent + (i*4 % 15) - 6));
-    out[m] = { present, absent: 100 - present };
-  });
-  return out;
-}
-
-function makeMatrixRow(presentPct: number){
-  return DAY_COLS.map(d=>{
-    if(d === '07' || d === '21') return 'H';
-    return Math.random()*100 < presentPct ? '1' : '0';
-  });
-}
-
-function makeMatrix(seedPresent: number){
-  const courseMatrices: any = {};
-  ALL_COURSES.forEach(c => {
-    const matrix: any = {};
-    MONTHS_LATEST_FIRST.forEach((m,i)=>{
-      const p = Math.max(55, Math.min(97, seedPresent + (i*4 % 15) - 6));
-      matrix[m] = makeMatrixRow(p);
-    });
-    courseMatrices[c] = matrix;
-  });
-  return courseMatrices;
-}
-
 const RAW_STUDENTS = [
   {name:'Ananya Singh',  roll:'MCA030', course:'EC202', seed:88, verification:'Verified',     time:'09:02 AM'},
   {name:'Garima Gupta',  roll:'MCA031', course:'EC202', seed:81, verification:'Not verified', time:'—'},
@@ -66,7 +37,6 @@ const RAW_STUDENTS = [
   {name:'Riya Kumari',   roll:'MCA038', course:'EC202', seed:66, verification:'Not verified', time:'—'},
 ];
 
-// Using Student from store
 const mockStudents: Student[] = RAW_STUDENTS
   .map((s,i)=>({
     id:'s'+i,
@@ -81,8 +51,8 @@ const mockStudents: Student[] = RAW_STUDENTS
     status: s.seed < 75 ? 'WARNING' : 'ACTIVE',
     verification:s.verification,
     time:s.time,
-    monthly:makeMonthly(s.seed),
-    matrix:makeMatrix(s.seed),
+    monthly: {}, // Handled by backend now
+    matrix: {}, // Handled by backend now
     faceEnrolled: s.verification === 'Verified',
     attendance: s.seed
   }));
@@ -296,13 +266,13 @@ export default function AdminStudents() {
   }, [fetchStudents]);
 
   // Merge backend data with mock matrix and monthly data
-  const students = React.useMemo(() => {
-    return rawStudents.map((s: Student, i: number) => {
-      const seed = 80 + (i % 15);
+  const mockStudents = React.useMemo(() => {
+    return rawStudents.map((s: Student) => {
+      // Data now strictly comes from backend!
       return {
         ...s,
-        monthly: makeMonthly(seed),
-        matrix: makeMatrix(seed),
+        monthly: s.monthly || {},
+        matrix: s.matrix || {},
       };
     });
   }, [rawStudents]);

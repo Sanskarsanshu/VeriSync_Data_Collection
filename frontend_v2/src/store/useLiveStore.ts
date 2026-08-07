@@ -37,7 +37,7 @@ export const useLiveStore = create<LiveState>()((set) => ({
   startSession: (sessionData) => set((state) => {
     const newSession: LiveSession = {
       ...sessionData,
-      id: `SES-${Date.now()}`,
+      id: (sessionData as any).id || `SES-${Date.now()}`,
       startTime: Date.now(),
       present: 0,
     };
