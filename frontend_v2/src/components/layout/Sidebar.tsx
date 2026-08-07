@@ -38,9 +38,18 @@ export function Sidebar({ role }: SidebarProps) {
   };
 
   const links = navItems[role] || navItems.student;
+  const { isSidebarOpen, toggleSidebar } = useAppStore();
 
   return (
-    <aside className="w-64 h-screen border-r border-border bg-card/30 backdrop-blur-md hidden md:flex flex-col sticky top-0">
+    <>
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+          onClick={() => toggleSidebar()}
+        />
+      )}
+      <aside className={`h-screen z-50 transition-transform duration-300 md:translate-x-0 ${isSidebarOpen ? 'fixed inset-y-0 left-0 w-64' : 'hidden md:flex w-64'} border-r border-border bg-card/50 backdrop-blur-md flex-col sticky top-0`}>
       <div className="h-16 flex items-center px-6 border-b border-border/50">
         <Fingerprint className="h-6 w-6 text-emerald-500 mr-2" />
         <span className="font-bold tracking-tight text-lg">VeriSync</span>
@@ -82,5 +91,6 @@ export function Sidebar({ role }: SidebarProps) {
         </div>
       </div>
     </aside>
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProfileDropdown } from '@/components/ui/profile-dropdown';
@@ -7,7 +7,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAppStore } from '@/store/useAppStore';
@@ -28,11 +27,14 @@ function formatTimeAgo(date: Date) {
 }
 
 export function Header() {
-  const { notifications, markAllNotificationsRead } = useAppStore();
+  const { notifications, markAllNotificationsRead, toggleSidebar } = useAppStore();
   const unreadCount = notifications.filter(n => !n.read).length;
   return (
     <header className="h-16 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4 w-full max-w-md">
+        <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={toggleSidebar}>
+          <Menu className="h-5 w-5" />
+        </Button>
         <div className="relative w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input 

@@ -704,11 +704,22 @@ export function TwoLevelSidebar() {
     setActiveSection(getInitialSection());
   }, [location.pathname]);
 
+  const isSidebarOpen = useAppStore(state => state.isSidebarOpen);
+
   return (
-    <div className="flex h-screen shrink-0">
-      <IconNavigation activeSection={activeSection} onSectionChange={setActiveSection} />
-      <DetailSidebar activeSection={activeSection} />
-    </div>
+    <>
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+          onClick={() => useAppStore.getState().toggleSidebar()}
+        />
+      )}
+      <div className={`h-screen shrink-0 z-50 transition-transform duration-300 md:translate-x-0 ${isSidebarOpen ? 'fixed inset-y-0 left-0 flex' : 'hidden md:flex'}`}>
+        <IconNavigation activeSection={activeSection} onSectionChange={setActiveSection} />
+        <DetailSidebar activeSection={activeSection} />
+      </div>
+    </>
   );
 }
 

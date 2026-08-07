@@ -75,7 +75,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative md:h-screen md:overflow-hidden lg:grid lg:grid-cols-2 bg-background">
+    <main className="relative min-h-screen overflow-hidden lg:grid lg:grid-cols-2 bg-background">
       {/* LEFT COLUMN - BRANDING (Hidden on Mobile) */}
       <div className="bg-muted/30 relative hidden h-full flex-col border-r border-border/50 p-12 lg:flex">
         <div className="from-background absolute inset-0 z-10 bg-gradient-to-t to-transparent" />
