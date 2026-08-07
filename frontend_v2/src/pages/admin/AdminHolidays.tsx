@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { 
   Palmtree, Calendar as CalendarIcon, Plus, Trash2, CalendarCheck2, History
@@ -121,6 +121,7 @@ const HolidayTable = ({ items, onDelete }: { items: typeof mockHolidays, onDelet
   </div>
 );
 
+export default function AdminHolidays() {
   const [holidayToDelete, setHolidayToDelete] = useState<any | null>(null);
 
   const confirmDelete = () => {
