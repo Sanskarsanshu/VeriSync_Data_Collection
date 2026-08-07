@@ -715,7 +715,7 @@ export function TwoLevelSidebar() {
           onClick={() => useAppStore.getState().toggleSidebar()}
         />
       )}
-      <div className={`h-screen shrink-0 z-50 transition-transform duration-300 md:translate-x-0 ${isSidebarOpen ? 'fixed inset-y-0 left-0 flex' : 'hidden md:flex'}`}>
+      <div className={`h-screen shrink-0 z-50 transition-transform duration-300 md:translate-x-0 ${isSidebarOpen ? 'fixed md:static inset-y-0 left-0 flex' : 'hidden md:flex'}`}>
         <IconNavigation activeSection={activeSection} onSectionChange={setActiveSection} />
         <DetailSidebar activeSection={activeSection} />
       </div>

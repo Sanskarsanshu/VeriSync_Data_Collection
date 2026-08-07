@@ -49,7 +49,7 @@ export function Sidebar({ role }: SidebarProps) {
           onClick={() => toggleSidebar()}
         />
       )}
-      <aside className={`h-screen z-50 transition-transform duration-300 md:translate-x-0 ${isSidebarOpen ? 'fixed inset-y-0 left-0 w-64' : 'hidden md:flex w-64'} border-r border-border bg-card/50 backdrop-blur-md flex-col sticky top-0`}>
+      <aside className={`h-screen z-50 transition-transform duration-300 md:translate-x-0 ${isSidebarOpen ? 'fixed md:static inset-y-0 left-0 w-64 flex' : 'hidden md:flex w-64'} border-r border-border bg-card/50 backdrop-blur-md flex-col sticky top-0`}>
       <div className="h-16 flex items-center px-6 border-b border-border/50">
         <Fingerprint className="h-6 w-6 text-emerald-500 mr-2" />
         <span className="font-bold tracking-tight text-lg">VeriSync</span>
