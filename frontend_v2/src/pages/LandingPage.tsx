@@ -30,55 +30,12 @@ export default function LandingPage() {
 
   const teamMembers = [
     {
-      name: "Sanskriti Kumari",
-      designation: "25MCA02811",
-      imageSrc: "/features/sanskriti.png",
-      socialLinks: [{ icon: Globe, href: "#" }, { icon: Mail, href: "#" }],
-    },
-    {
-      name: "Muskan Kumari",
-      designation: "25MCA02799",
-      imageSrc: "/features/muskan.png",
-      socialLinks: [{ icon: Globe, href: "#" }, { icon: Mail, href: "#" }],
-    },
-    {
-      name: "Richa Kumari",
-      designation: "25MCA02806",
-      imageSrc: "/features/richa.png",
-      socialLinks: [{ icon: Globe, href: "#" }, { icon: Mail, href: "#" }],
-    },
-    {
-      name: "Mansi Pandey",
-      designation: "25MCA02797",
-      imageSrc: "/features/mansi.png",
-      socialLinks: [{ icon: Globe, href: "#" }, { icon: Mail, href: "#" }],
-    },
-    {
-      name: "Ayushi Sharma",
-      designation: "25MCA02791",
-      imageSrc: "/features/ayushi.png",
-      socialLinks: [{ icon: Globe, href: "#" }, { icon: Mail, href: "#" }],
-    },
-    {
-      name: "Tannu Kumari",
-      designation: "25MCA02819",
-      imageSrc: "/features/tannu.png",
-      socialLinks: [{ icon: Globe, href: "#" }, { icon: Mail, href: "#" }],
-    },
-    {
-      name: "Komal Kumari",
-      designation: "25MCA02796",
-      imageSrc: "/features/komal.png",
+      name: "Sanskar",
+      designation: "Developer",
+      imageSrc: "/features/sanskar.png",
       socialLinks: [{ icon: Globe, href: "#" }, { icon: Mail, href: "#" }],
     }
   ];
-
-  const coordinator = {
-    name: "Ms. Richa Verma",
-    designation: "MCA, M.Phil, B.LIS, Ph.D.(Pursuing)",
-    imageSrc: "/features/richa_verma.png",
-    rolePrefix: "Mentored by"
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/30">
@@ -297,9 +254,8 @@ export default function LandingPage() {
       {/* ---------------- TEAM SECTION ---------------- */}
       <TeamSection
         title="TEAM"
-        description="Meet the minds behind VeriSync. Our team is dedicated to building secure, modern, and reliable attendance solutions."
+        description="Meet the mind behind VeriSync. Dedicated to building secure, modern, and reliable attendance solutions."
         members={teamMembers}
-        coordinator={coordinator}
       />
 
       {/* ---------------- FAQ ---------------- */}
