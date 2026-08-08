@@ -49,12 +49,47 @@ export type Student = {
   attendance: number;
 };
 
+export type CourseAuthorization = {
+  id: string;
+  code: string;
+  teacherId: string;
+  teacherName: string;
+  subjectCode: string;
+  session: string;
+  semester: string;
+  section: string;
+  expiry: string;
+  status: 'UNUSED' | 'USED';
+  type: string;
+  createdAt: string;
+};
+
+export type CourseInstance = {
+  id: string;
+  teacherId: string;
+  subjectCode: string;
+  displayName: string;
+  session: string;
+  semester: string;
+  section: string;
+  banner: string;
+  expectedStudents: number;
+  createdAt: string;
+};
+
 interface DataState {
   subjects: Subject[];
   teachers: Teacher[];
   students: Student[];
   timetables: Record<string, any>;
   academicEvents: any[];
+  
+  authorizations: CourseAuthorization[];
+  courseInstances: CourseInstance[];
+
+  addAuthorization: (auth: CourseAuthorization) => void;
+  markAuthorizationUsed: (code: string) => void;
+  addCourseInstance: (course: CourseInstance) => void;
   
   // API Actions
   fetchSubjects: () => Promise<void>;
@@ -161,6 +196,39 @@ const initialTeachers: Teacher[] = [
   },
 ];
 
+const initialAuthorizations: CourseAuthorization[] = [
+  {
+    id: 'AUTH1', code: 'Wc7P2kLm9Q', teacherId: 'FAC2021', teacherName: 'Dr. Praveen Kumar',
+    subjectCode: 'CC102', session: '2024-2026', semester: '1', section: 'A',
+    expiry: '2026-11-15', status: 'UNUSED', type: 'COURSE_CREATION', createdAt: new Date().toISOString()
+  }
+];
+
+const initialCourseInstances: CourseInstance[] = initialTeachers.flatMap(teacher => {
+  if (!teacher.semesterSubjects) return [];
+  const instances: CourseInstance[] = [];
+  Object.entries(teacher.semesterSubjects).forEach(([semStr, codes]) => {
+    codes.forEach(code => {
+      const sub = initialSubjects.find(s => s.code === code);
+      if (sub) {
+        instances.push({
+          id: `CRS-MCA-${code}-${teacher.id}-${semStr}-A`,
+          teacherId: teacher.id,
+          subjectCode: code,
+          displayName: sub.name,
+          session: '2024-2026',
+          semester: semStr,
+          section: 'A',
+          banner: 'Blue', // Default banner
+          expectedStudents: 60,
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
+  });
+  return instances;
+});
+
 export const useDataStore = create<DataState>()(
   persist(
     (set, get) => ({
@@ -169,6 +237,14 @@ export const useDataStore = create<DataState>()(
       students: [],
       timetables: initialTimeTables,
       academicEvents: initialAcademicEvents,
+      authorizations: initialAuthorizations,
+      courseInstances: initialCourseInstances,
+
+      addAuthorization: (auth) => set(state => ({ authorizations: [auth, ...state.authorizations] })),
+      markAuthorizationUsed: (code) => set(state => ({
+        authorizations: state.authorizations.map(a => a.code === code ? { ...a, status: 'USED' } : a)
+      })),
+      addCourseInstance: (course) => set(state => ({ courseInstances: [course, ...state.courseInstances] })),
 
       fetchSubjects: async () => {
         try {
@@ -286,7 +362,7 @@ export const useDataStore = create<DataState>()(
       },
     }),
     {
-      name: 'verisync-data-storage-v2', // bump version to reset static cache
+      name: 'verisync-data-storage-v3', // bump version to reset static cache
     }
   )
 );

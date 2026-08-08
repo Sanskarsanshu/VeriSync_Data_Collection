@@ -5,13 +5,18 @@ import { AttendanceService } from './attendance.service';
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
-  @Post('simulate-class')
-  simulateClass(@Body() data: any) {
-    return this.attendanceService.simulateClass(data);
+  @Post('start')
+  startSession(@Body() data: any) {
+    return this.attendanceService.startSession(data);
   }
 
-  @Post('log-scan')
-  logScan(@Body() data: any) {
-    return this.attendanceService.logScan(data);
+  @Post('mark')
+  markAttendance(@Body() data: { sessionId: string; studentId: string; otp?: string; token?: string }) {
+    return this.attendanceService.markAttendance(data);
+  }
+
+  @Post('live-stats')
+  getLiveStats(@Body() data: { sessionId: string }) {
+    return this.attendanceService.getLiveStats(data.sessionId);
   }
 }

@@ -28,9 +28,23 @@ import AdminTeacherProfile from '@/pages/admin/AdminTeacherProfile';
 
 // Teacher pages
 import TeacherDashboard from '@/pages/teacher/TeacherDashboard';
+import TeacherAssignedSubjects from '@/pages/teacher/TeacherAssignedSubjects';
+import TeacherMyCourses from '@/pages/teacher/TeacherMyCourses';
+import TeacherCreateCourse from '@/pages/teacher/TeacherCreateCourse';
+import TeacherClassSchedule from '@/pages/teacher/TeacherClassSchedule';
+import TeacherStartAttendance from '@/pages/teacher/TeacherStartAttendance';
+import TeacherLiveAttendance from '@/pages/teacher/TeacherLiveAttendance';
+import TeacherAttendanceRecords from '@/pages/teacher/TeacherAttendanceRecords';
+import TeacherCorrectionRequests from '@/pages/teacher/TeacherCorrectionRequests';
+import TeacherAttendanceSheets from '@/pages/teacher/TeacherAttendanceSheets';
+import TeacherReportsAnalytics from '@/pages/teacher/TeacherReportsAnalytics';
+import TeacherMyProfile from '@/pages/teacher/TeacherMyProfile';
+import TeacherSecurity from '@/pages/teacher/TeacherSecurity';
+import TeacherSettings from '@/pages/teacher/TeacherSettings';
 
 // Student pages
 import StudentDashboard from '@/pages/student/StudentDashboard';
+import StudentMockJoin from '@/pages/student/StudentMockJoin';
 import RegisterPage from '@/pages/RegisterPage';
 
 /**
@@ -87,9 +101,26 @@ function App() {
             A teacher cannot access /admin routes and vice-versa.
         ──────────────────────────────────────────────────────────── */}
         <Route path="/teacher" element={<TeacherGuard><TeacherDashboard /></TeacherGuard>} />
+        <Route path="/teacher/academic/subjects" element={<TeacherGuard><TeacherAssignedSubjects /></TeacherGuard>} />
+        <Route path="/teacher/academic/courses" element={<TeacherGuard><TeacherMyCourses /></TeacherGuard>} />
+        <Route path="/teacher/academic/create-course" element={<TeacherGuard><TeacherCreateCourse /></TeacherGuard>} />
+        <Route path="/teacher/academic/schedule" element={<TeacherGuard><TeacherClassSchedule /></TeacherGuard>} />
+        
+        <Route path="/teacher/attendance/start" element={<TeacherGuard><TeacherStartAttendance /></TeacherGuard>} />
+        <Route path="/teacher/attendance/live" element={<TeacherGuard><TeacherLiveAttendance /></TeacherGuard>} />
+        <Route path="/teacher/attendance/records" element={<TeacherGuard><TeacherAttendanceRecords /></TeacherGuard>} />
+        <Route path="/teacher/attendance/corrections" element={<TeacherGuard><TeacherCorrectionRequests /></TeacherGuard>} />
+        <Route path="/teacher/attendance/sheets" element={<TeacherGuard><TeacherAttendanceSheets /></TeacherGuard>} />
+        
+        <Route path="/teacher/insights/reports" element={<TeacherGuard><TeacherReportsAnalytics /></TeacherGuard>} />
+        
+        <Route path="/teacher/account/profile" element={<TeacherGuard><TeacherMyProfile /></TeacherGuard>} />
+        <Route path="/teacher/account/security" element={<TeacherGuard><TeacherSecurity /></TeacherGuard>} />
+        <Route path="/teacher/account/settings" element={<TeacherGuard><TeacherSettings /></TeacherGuard>} />
 
         {/* Student routes (no guard yet — add StudentGuard when ready) */}
         <Route path="/student" element={<StudentDashboard />} />
+        <Route path="/student/mock-join" element={<StudentMockJoin />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />

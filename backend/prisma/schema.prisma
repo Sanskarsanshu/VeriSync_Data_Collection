@@ -319,12 +319,22 @@ enum SessionStatus {
   CLOSED
 }
 
+enum VerificationMethod {
+  FACE
+  OTP
+  STATIC_QR
+  DYNAMIC_QR
+  MANUAL
+}
+
 model AttendanceSession {
   id               String   @id @default(uuid())
   scheduledClassId String   @unique
   status           SessionStatus @default(SCHEDULED)
   openedAt         DateTime?
   closedAt         DateTime?
+  
+  verificationMethod VerificationMethod?
   
   // Hybrid verification details
   dynamicQrSecret  String?  // Changes every 15s
@@ -354,6 +364,7 @@ model AttendanceRecord {
   sessionId           String
   studentId           String
   status              AttendanceStatus
+  verificationMethod  VerificationMethod @default(MANUAL)
   derivationState     DerivationState @default(NONE)
   markedAt            DateTime @default(now())
   

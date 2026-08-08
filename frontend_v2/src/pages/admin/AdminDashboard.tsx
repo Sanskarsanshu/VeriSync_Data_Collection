@@ -7,9 +7,9 @@ import {
   FileEdit
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer
 } from 'recharts';
+import { AttendanceTrendFan } from '@/components/ui/attendance-trend-fan';
 
 const attendanceDataThisWeek = [
   { name: 'Mon', attendance: 88, proxies: 12 },
@@ -151,43 +151,15 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Area Chart */}
           <div className="lg:col-span-2 bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-bold tracking-tight">Attendance Trends</h2>
                 <p className="text-sm text-muted-foreground">Weekly aggregate vs Proxy flags</p>
               </div>
-              <select 
-                className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm outline-none cursor-pointer"
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value)}
-              >
-                <option value="This Week">This Week</option>
-                <option value="Last Week">Last Week</option>
-                <option value="This Month">This Month</option>
-              </select>
             </div>
             
-            <div className="h-[300px] w-full mt-auto">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={getAttendanceData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorAtt" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorProx" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
-                  <RechartsTooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="attendance" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorAtt)" />
-                  <Area type="monotone" dataKey="proxies" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorProx)" />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="w-full flex-1 flex items-center justify-center pb-2">
+              <AttendanceTrendFan />
             </div>
           </div>
 

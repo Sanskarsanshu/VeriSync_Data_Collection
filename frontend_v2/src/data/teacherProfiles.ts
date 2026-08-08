@@ -187,24 +187,55 @@ export const teacherProfilesData: Record<string, TeacherProfile> = {
     gender: 'Female',
     designation: 'Professor & Head of Department (HOD)',
     department: 'Computer Applications (MCA)',
-    qualifications: 'Ph.D, MCA, M.Sc',
-    email: 'Bhawnasinha.mca@pwc.in',
+    qualifications: 'Ph.D, M.Phil, MCA, MBA',
+    vidwanId: '339988',
+    orcidId: '0000-0002-5460-3945',
+    email: 'bhawnasinha@pwc.in',
+    phone: '+91 9973261668',
     image: '/features/Bhawnasinha.png',
     workExperience: [
       { role: 'Head of Department (MCA)', org: 'Patna Women’s College', duration: '2010 - Present' },
       { role: 'Professor', org: 'Patna Women’s College', duration: '2005 - Present' }
     ],
     committees: [
-      'Chairperson, Board of Studies (BOS) for MCA & BCA',
-      'Academic Council Member, Patna University'
+      'Life Member, Computer Society of India (2013)',
+      'Research Coordinator, R&D Cell PWC (2018)',
+      'IQAC Member, Patna Women’s College (2011)'
     ],
     achievements: [
-      'Excellence in Academic Leadership Award',
-      '20+ Years of Distinguished Teaching Service'
+      'Best Researcher Award (CS & ICT)',
+      'Best Digital Educator Award',
+      'Mother Teresa Excellence Award',
+      'Exemplary Teacher Award',
+      'Active Participation (Women) - CSI'
     ],
     publications: [
-      { title: 'Advanced Computing and Intelligent Systems', book: 'Tech Press', year: 2021 },
-      { title: 'Research Trends in Machine Learning and AI', journal: 'International Journal of Advanced Research in Computer Science', year: 2023 }
+      { title: 'Core Java Simply In-Depth', book: 'Book', year: 2018 },
+      { title: 'Computer literacy: An Overview', book: 'Book', year: 2014 },
+      { title: 'Web Designing', book: 'Book', year: 2014 },
+      { title: '3 D Animation and Design', book: 'Book', year: 2014 },
+      { title: 'Augmented Reality: A tool for Interactive Learning Environment', journal: 'SSRN Electronic Journal', year: 2022, link: 'http://DOI: 10.2139/ssrn.4066684' },
+      { title: 'Augmented Reality in Education and Learning', journal: 'Explore Journal of Research', year: 2022, link: 'https://patnawomenscollege.in/augmented-reality-in-education-and-learning/' },
+      { title: 'Empowering IoT through Improving Technology', journal: 'MOL2NET’22 Conference', year: 2022, link: 'https://doi.org/10.3390/mol2net-08-12633' },
+      { title: 'Real Time Face Mask Detection Using Machine Learning', journal: 'Explore Journal of Research', year: 2021 },
+      { title: 'Applications of Microwave Remote Sensing of Soil Moisture', journal: 'SSRN Electronic Journal', year: 2020 },
+      { title: 'Li-Fi: A Framework for Future IT Environment', journal: 'Journal of Shanghai Jiaotong University', year: 2020 },
+      { title: 'Post-COVID Challenges and Opportunities in the Education Sector', journal: 'SSRN Electronic Journal', year: 2020 },
+      { title: 'Role of Augmented Reality Application in Higher Education Learning', journal: 'Aegaeum Journal', year: 2020 },
+      { title: 'A study on DDoS Attacks, Danger, and Its Prevention', journal: 'International Journal of Research and Analytical Reviews', year: 2019 },
+      { title: 'Fuzzy Logic and Network Intrusion Detection System', journal: 'International Journal of Development Research', year: 2019 },
+      { title: 'E-Content: An effective tool for Blended Learning', journal: 'IJSER', year: 2018 },
+      { title: 'MOOC: The New Trend of Education', journal: 'Explore Journal of Research', year: 2018 },
+      { title: 'Accelerating Digital Transformation with the Internet of Everything', journal: 'CSI Communications', year: 2017 },
+      { title: 'E-Waste Management “A Potential Route to Green Computing”', journal: 'IJIACS', year: 2017 },
+      { title: 'Direct Benefit Transfer: Issues and Challenges', journal: 'Explore Journal of Research', year: 2017 },
+      { title: 'Study on Remote File Attacking– Inclusion & Detection', journal: 'IJSEAT', year: 2014 },
+      { title: 'Study of Network Intrusion Detection using Fuzzy Logic', journal: 'Journal of Physical Science', year: 2013 },
+      { title: 'E-Governance in Higher Education: Issues and Challenges', book: 'Excellence in Higher Education', year: 2020 },
+      { title: 'ICT – A Catalyst for Innovation in Higher Education', book: 'Changing Perspectives of Education in India', year: 2020 },
+      { title: 'ICT-A Tool for Women Empowerment', book: 'Women Empowerment Conference', year: 2019 },
+      { title: 'Intrusion Detection System: Tools and Techniques', book: '6th Bihar Science Conference', year: 2014 },
+      { title: 'Garbage Disposal and Solid Waste Management: e-Waste Management', book: 'Urban Infrastructure in India', year: 2017 }
     ]
   }
 };

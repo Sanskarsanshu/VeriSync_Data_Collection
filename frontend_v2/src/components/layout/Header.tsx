@@ -10,6 +10,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAppStore } from '@/store/useAppStore';
+import { teacherProfilesData } from '@/data/teacherProfiles';
 
 function formatTimeAgo(date: Date) {
   const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
@@ -27,8 +28,34 @@ function formatTimeAgo(date: Date) {
 }
 
 export function Header() {
-  const { notifications, markAllNotificationsRead, toggleSidebar } = useAppStore();
+  const { notifications, markAllNotificationsRead, toggleSidebar, user } = useAppStore();
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  let teacherAvatar = '';
+  let teacherTitle = 'TEACHER';
+  
+  if (user?.role === 'teacher') {
+    const profile = Object.values(teacherProfilesData).find(
+      (t) => t.email.toLowerCase() === user.email?.toLowerCase()
+    );
+    if (profile) {
+      teacherAvatar = profile.image || '';
+      teacherTitle = profile.designation.split('/')[0].trim().toUpperCase() || 'TEACHER';
+    } else {
+      teacherAvatar = '/features/praveen.png'; // fallback
+    }
+  }
+
+  // Convert the global user state into the Profile format expected by ProfileDropdown
+  const profileData = user ? {
+    name: user.name,
+    email: user.email || '',
+    title: user.role === 'admin' ? 'HOD' : teacherTitle,
+    avatar: user.role === 'admin' ? '/features/Bhawnasinha.png' : 
+            user.role === 'teacher' ? teacherAvatar : 
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=10b981&color=fff`
+  } : undefined;
+
   return (
     <header className="h-16 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4 w-full max-w-md">
@@ -88,7 +115,7 @@ export function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="h-6 w-px bg-border mx-2"></div>
-        <ProfileDropdown />
+        <ProfileDropdown data={profileData} />
       </div>
     </header>
   );

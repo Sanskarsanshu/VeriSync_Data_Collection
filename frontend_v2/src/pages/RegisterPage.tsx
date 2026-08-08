@@ -55,11 +55,22 @@ export default function RegisterPage() {
   const [emailVerified, setEmailVerified] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
+  const [metadata, setMetadata] = useState<{ batches: any[], sections: any[] }>({ batches: [], sections: [] });
 
   useEffect(() => {
-    // We simulate loading metadata and resolving it so UI can be seen instantly
-    setLoading(false);
+    fetch(`${API_URL}/enrollment/metadata`)
+      .then(res => res.json())
+      .then(data => {
+        setMetadata(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Metadata load error", err);
+        // Fallback fake data if backend is not seeded properly
+        setMetadata({ batches: [], sections: [] });
+        setLoading(false);
+      });
   }, []);
 
   // Liveness Timer Effect
@@ -204,10 +215,18 @@ export default function RegisterPage() {
   };
 
   // OTP Handlers
-  const sendOtp = () => {
-    setOtpSent(true);
-    setOtpValue(['', '', '', '', '', '']);
-    // In future: await fetch('/api/send-otp', { email })
+  const sendOtp = async () => {
+    try {
+      await fetch(`${API_URL}/enrollment/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: personalInfo.email })
+      });
+      setOtpSent(true);
+      setOtpValue(['', '', '', '', '', '']);
+    } catch (err) {
+      setError('Failed to send OTP. Please try again.');
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -230,19 +249,29 @@ export default function RegisterPage() {
     }
   };
 
-  const verifyOtp = () => {
+  const verifyOtp = async () => {
     const code = otpValue.join('');
     if (code.length !== 6) return setError('Please enter a valid 6-digit OTP.');
     
     setVerifyingOtp(true);
     setError('');
     
-    // Mock API verification
-    setTimeout(() => {
-      setVerifyingOtp(false);
+    try {
+      const res = await fetch(`${API_URL}/enrollment/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: personalInfo.email, otp: code })
+      });
+      
+      if (!res.ok) throw new Error('Invalid OTP code');
+      
       setEmailVerified(true);
       setOtpSent(false);
-    }, 1000);
+    } catch (err: any) {
+      setError(err.message || 'Verification failed');
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -415,28 +444,35 @@ export default function RegisterPage() {
                     <Label className="text-sm">Enrolled Batch <span className="text-destructive">*</span></Label>
                     <select className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors" value={academicInfo.batchId} onChange={e => setAcademicInfo({...academicInfo, batchId: e.target.value})}>
                       <option value="" disabled>Select Batch</option>
-                      <option value="1st year(i sem)">1st year(i sem)</option>
-                      <option value="1st year(ii sem)">1st year(ii sem)</option>
-                      <option value="2nd year (iii sem)">2nd year (iii sem)</option>
-                      <option value="2nd year (iv sem)">2nd year (iv sem)</option>
+                      {metadata.batches && metadata.batches.length > 0 ? (
+                        metadata.batches.map(b => (
+                          <option key={b.id} value={b.id}>{b.name}</option>
+                        ))
+                      ) : (
+                        <option value="fake-batch-id">1st year(i sem) (Fallback)</option>
+                      )}
                     </select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm">Section Assignment <span className="text-destructive">*</span></Label>
                     <select className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors" value={academicInfo.sectionId} onChange={e => setAcademicInfo({...academicInfo, sectionId: e.target.value})}>
                       <option value="" disabled>Select Section</option>
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
+                      {metadata.sections && metadata.sections.length > 0 ? (
+                        metadata.sections.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))
+                      ) : (
+                        <option value="fake-section-id">A (Fallback)</option>
+                      )}
                     </select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm">Admission Year</Label>
-                    <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={academicInfo.admissionYear} onChange={e => setAcademicInfo({...academicInfo, admissionYear: e.target.value})} />
+                    <Input className="h-11 bg-background/50 border border-border/50 focus:bg-background" value={academicInfo.admissionYear} onChange={e => setAcademicInfo({...academicInfo, admissionYear: e.target.value})} />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm">Expected Graduation</Label>
-                    <Input className="h-11 bg-background/50 border-border/50 focus:bg-background" value={academicInfo.expectedGraduationYear} onChange={e => setAcademicInfo({...academicInfo, expectedGraduationYear: e.target.value})} />
+                    <Input className="h-11 bg-background/50 border border-border/50 focus:bg-background" value={academicInfo.expectedGraduationYear} onChange={e => setAcademicInfo({...academicInfo, expectedGraduationYear: e.target.value})} />
                   </div>
                 </div>
               </div>
@@ -453,8 +489,20 @@ export default function RegisterPage() {
                     "relative w-72 h-72 rounded-full overflow-hidden flex items-center justify-center transition-all duration-500",
                     faceEmbedding ? "border-4 border-emerald-500 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] bg-emerald-500/10" : "bg-background border-4 border-border/50 shadow-inner"
                   )}>
+                    <video 
+                      ref={videoRef} 
+                      autoPlay 
+                      playsInline 
+                      muted 
+                      className={cn("absolute inset-0 w-full h-full object-cover transform -scale-x-100", !cameraActive && "hidden")} 
+                    />
+                    <canvas 
+                      ref={canvasRef} 
+                      className={cn("absolute inset-0 w-full h-full transform -scale-x-100 mix-blend-screen", !cameraActive && "hidden")} 
+                    />
+
                     {!cameraActive && !faceEmbedding && (
-                      <div className="text-center p-6 flex flex-col items-center gap-4">
+                      <div className="text-center p-6 flex flex-col items-center gap-4 relative z-10 bg-background/50 backdrop-blur-md rounded-full absolute inset-0 justify-center">
                         <CameraIcon className="size-10 text-muted-foreground/50" />
                         <Button onClick={startCamera} size="lg" className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg">
                           Initialize Camera
@@ -463,9 +511,6 @@ export default function RegisterPage() {
                     )}
                     {cameraActive && (
                       <>
-                        <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" />
-                        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full transform -scale-x-100 mix-blend-screen" />
-                        
                         {/* Liveness Guide Overlay */}
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center flex-col z-10 p-4 text-center">
                            <div className="absolute inset-0 border-[40px] border-background/80 rounded-full" />
@@ -483,7 +528,7 @@ export default function RegisterPage() {
                       </>
                     )}
                     {faceEmbedding && (
-                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-sm flex flex-col items-center justify-center animate-in zoom-in duration-300">
+                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-sm flex flex-col items-center justify-center animate-in zoom-in duration-300 z-20">
                         <div className="bg-background/90 p-3 rounded-full mb-2">
                           <CheckCircle2Icon className="size-10 text-emerald-500" />
                         </div>

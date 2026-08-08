@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { TwoLevelSidebar } from './TwoLevelSidebar';
+import { TeacherTwoLevelSidebar } from './TeacherTwoLevelSidebar';
 import { Header } from './Header';
 
 interface DashboardLayoutProps {
@@ -11,7 +12,13 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {role === 'admin' ? <TwoLevelSidebar /> : <Sidebar role={role} />}
+      {role === 'admin' ? (
+        <TwoLevelSidebar />
+      ) : role === 'teacher' ? (
+        <TeacherTwoLevelSidebar />
+      ) : (
+        <Sidebar role={role} />
+      )}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto bg-muted/10">

@@ -2,6 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Settings, FileText, LogOut, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAppStore } from "@/store/useAppStore";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -44,20 +45,23 @@ export function ProfileDropdown({
     const [isOpen, setIsOpen] = React.useState(false);
     const navigate = useNavigate();
 
+    const { user } = useAppStore();
+    const rolePrefix = user?.role === 'teacher' ? '/teacher/account' : '/admin';
+
     const menuItems: MenuItem[] = [
         {
             label: "My Profile",
-            href: "/admin/profile",
+            href: `${rolePrefix}/profile`,
             icon: <User className="w-4 h-4" />,
         },
         {
             label: "Settings",
-            href: "/admin/settings",
+            href: `${rolePrefix}/settings`,
             icon: <Settings className="w-4 h-4" />,
         },
         {
             label: "Terms & Policies",
-            href: "/admin/settings",
+            href: `${rolePrefix}/settings`,
             icon: <FileText className="w-4 h-4" />,
         },
     ];

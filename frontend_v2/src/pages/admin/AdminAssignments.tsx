@@ -191,10 +191,10 @@ export default function AdminAssignments() {
           </div>
 
           {/* Active Assignments List */}
-          <div className="md:col-span-2 bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-border/50 flex items-center justify-between bg-muted/20">
-              <h3 className="font-semibold">Active Allocations</h3>
-              <div className="relative w-64">
+          <div className="md:col-span-2 flex flex-col gap-4">
+            <div className="bg-card border border-border rounded-2xl shadow-sm p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <h3 className="font-bold text-lg">Active Allocations</h3>
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                 <input 
                   type="text" 
@@ -205,48 +205,84 @@ export default function AdminAssignments() {
                 />
               </div>
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border/50">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Teacher</th>
-                    <th className="px-4 py-3 font-medium">Subject</th>
-                    <th className="px-4 py-3 font-medium">Section</th>
-                    <th className="px-4 py-3 text-right font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {filteredAssignments.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground italic">
-                        No active allocations found.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredAssignments.map((assignment) => (
-                      <tr key={assignment.id} className="hover:bg-muted/30 transition-colors group">
-                        <td className="px-4 py-3 font-semibold text-foreground">{assignment.teacher}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{assignment.subject}</td>
-                        <td className="px-4 py-3">
-                          <span className="px-2 py-1 rounded bg-muted text-xs border border-border/50">
-                            {assignment.section}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button 
-                            onClick={() => setAssignmentToDelete(assignment)}
-                            className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors opacity-0 group-hover:opacity-100"
-                            title="Remove Assignment"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+
+            {/* Grouped by Teacher and Semester */}
+            <div className="space-y-4">
+              {teachers
+                .filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             Object.values(t.semesterSubjects || {}).flat().some(code => code.toLowerCase().includes(searchTerm.toLowerCase())))
+                .map(teacher => {
+                const semSubjects = teacher.semesterSubjects || {};
+                const semesters = Object.keys(semSubjects).map(Number).sort((a, b) => a - b);
+                
+                if (semesters.length === 0) return null;
+
+                return (
+                  <div key={teacher.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                    <div className="p-4 bg-muted/30 border-b border-border/50 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="size-8 rounded-full bg-pink-500/10 text-pink-500 font-bold flex items-center justify-center text-xs">
+                          {teacher.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-foreground">{teacher.name}</h4>
+                          <p className="text-xs text-muted-foreground">{teacher.dept} - {teacher.designation}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 space-y-4">
+                      {semesters.map(sem => {
+                        const codes = semSubjects[sem];
+                        if (!codes || codes.length === 0) return null;
+
+                        const matchingCodes = codes.filter(code => 
+                          code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          subjects.find(s => s.code === code)?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          teacher.name.toLowerCase().includes(searchTerm.toLowerCase())
+                        );
+
+                        if (matchingCodes.length === 0 && searchTerm) return null;
+                        const displayCodes = searchTerm ? matchingCodes : codes;
+
+                        return (
+                          <div key={sem} className="border border-border/50 rounded-xl overflow-hidden">
+                            <div className="bg-muted/10 px-4 py-2 border-b border-border/50 text-sm font-semibold text-muted-foreground">
+                              Semester {sem}
+                            </div>
+                            <div className="divide-y divide-border/50">
+                              {displayCodes.map(code => {
+                                const subjectDetails = subjects.find(s => s.code === code);
+                                return (
+                                  <div key={code} className="p-3 flex items-center justify-between hover:bg-muted/20 transition-colors group">
+                                    <div>
+                                      <div className="font-semibold text-sm">{code} - {subjectDetails?.name || 'Unknown'}</div>
+                                      <div className="text-xs text-muted-foreground mt-0.5">MCA Sem-{sem} (Section A)</div>
+                                    </div>
+                                    <button 
+                                      onClick={() => setAssignmentToDelete({ teacherId: teacher.id, subjectCode: code, subject: `${code} - ${subjectDetails?.name}` })}
+                                      className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                                      title="Remove Assignment"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {teachers.every(t => !t.semesterSubjects || Object.keys(t.semesterSubjects).length === 0) && (
+                <div className="bg-card border border-border rounded-2xl p-8 text-center text-muted-foreground shadow-sm">
+                  No active allocations found.
+                </div>
+              )}
             </div>
           </div>
           

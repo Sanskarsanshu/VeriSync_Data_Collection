@@ -57,16 +57,23 @@ export default function LoginPage() {
       }
       
       // Update global store with real name from backend
+      const userRole = data.role.toLowerCase() as 'admin' | 'teacher' | 'student';
       setUser({
         id: 'auth-user',
-        role: data.role.toLowerCase() as 'admin' | 'teacher' | 'student',
+        role: userRole,
         name: data.name || email,
         email: data.email || email,
       });
 
       // Navigate to the originally requested page, or the role dashboard
-      const from = (location.state as any)?.from?.pathname;
-      navigate(from || `/${data.role.toLowerCase()}`, { replace: true });
+      let from = (location.state as any)?.from?.pathname;
+      
+      // If the user was trying to access a page that doesn't belong to their role, ignore it
+      if (from && !from.startsWith(`/${userRole}`)) {
+        from = null;
+      }
+      
+      navigate(from || `/${userRole}`, { replace: true });
     } catch (err: any) {
       setError(err.message || 'An error occurred during login');
     } finally {

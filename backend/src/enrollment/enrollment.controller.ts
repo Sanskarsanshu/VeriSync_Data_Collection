@@ -25,6 +25,16 @@ export class EnrollmentController {
     return this.enrollmentService.getMetadata();
   }
 
+  @Post('send-otp')
+  async sendOtp(@Body() body: { email: string }) {
+    return this.enrollmentService.sendOtp(body.email);
+  }
+
+  @Post('verify-otp')
+  async verifyOtp(@Body() body: { email: string, otp: string }) {
+    return this.enrollmentService.verifyOtp(body.email, body.otp);
+  }
+
   @Post('submit')
   async submitEnrollment(@Body() body: any) {
     return this.enrollmentService.submitEnrollment(body);
