@@ -40,6 +40,7 @@ export class AuthService {
       include: {
         adminProfile: { select: { name: true } },
         teacherProfile: { select: { name: true } },
+        studentProfile: { select: { name: true, rollNumber: true, id: true } },
       },
     });
 
@@ -50,6 +51,7 @@ export class AuthService {
     const name =
       user.adminProfile?.name ??
       user.teacherProfile?.name ??
+      user.studentProfile?.name ??
       user.email;
 
     return {
@@ -57,6 +59,8 @@ export class AuthService {
       email: user.email,
       role: user.role,
       name,
+      studentId: user.studentProfile?.id,
+      rollNumber: user.studentProfile?.rollNumber,
     };
   }
 }

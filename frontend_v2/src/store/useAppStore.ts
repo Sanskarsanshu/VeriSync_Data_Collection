@@ -19,6 +19,8 @@ interface AppState {
     role: 'admin' | 'teacher' | 'student';
     name: string;
     email?: string;
+    studentId?: string;
+    rollNumber?: string;
   } | null;
   setUser: (user: AppState['user']) => void;
   logout: () => Promise<void>;

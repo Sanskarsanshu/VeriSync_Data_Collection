@@ -401,3 +401,28 @@ model AttendanceRevision {
   
   record             AttendanceRecord @relation(fields: [recordId], references: [id])
 }
+
+// ---------------------------------------------------------
+// 7. Security & Audit Logging
+// ---------------------------------------------------------
+
+enum AuditAction {
+  SESSION_STARTED
+  SESSION_CLOSED
+  FACE_VERIFICATION_SUCCESS
+  FACE_VERIFICATION_FAILED
+  QR_VERIFICATION_SUCCESS
+  QR_VERIFICATION_FAILED
+  MANUAL_ATTENDANCE_CHANGED
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  userId      String?
+  action      AuditAction
+  sessionId   String?
+  studentId   String?
+  timestamp   DateTime    @default(now())
+  ipAddress   String?
+  metadata    Json?
+}

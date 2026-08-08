@@ -7,9 +7,7 @@ import {
   TrendingUp, ArrowRight, BookOpen, AlertCircle,
   FileEdit, Play, Calendar, UserCircle
 } from 'lucide-react';
-import {
-  PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer
-} from 'recharts';
+import { SectorsDonut } from '@/components/ui/sectors-donut';
 import { AttendanceTrendFan } from '@/components/ui/attendance-trend-fan';
 import { useAppStore } from '@/store/useAppStore';
 import { teacherProfilesData } from '@/data/teacherProfiles';
@@ -234,44 +232,12 @@ export default function TeacherDashboard() {
             </div>
             
             <div className="flex-1 flex flex-col items-center justify-center relative mt-4">
-              <div className="h-[200px] w-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={verificationData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={65}
-                      outerRadius={90}
-                      paddingAngle={4}
-                      dataKey="value"
-                      stroke="none"
-                      cornerRadius={4}
-                    >
-                      {verificationData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-3xl font-bold text-foreground">98%</span>
-                <span className="text-[10px] font-bold text-blue-500 tracking-wider uppercase">Verified</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              {verificationData.map((item, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ backgroundColor: item.color }} />
-                  <div>
-                    <div className="text-xs text-muted-foreground leading-tight mb-0.5">{item.name}</div>
-                    <div className="font-bold text-sm text-foreground">{item.value}%</div>
-                  </div>
-                </div>
-              ))}
+              <SectorsDonut 
+                symbol="98%"
+                caption="VERIFIED"
+                sectors={verificationData.map(v => ({ label: v.name, pct: v.value }))}
+                colors={verificationData.map(v => v.color)}
+              />
             </div>
           </div>
         </div>

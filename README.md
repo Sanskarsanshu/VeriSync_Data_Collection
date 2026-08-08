@@ -1,137 +1,182 @@
-<div align="center">
-  <img src="docs/images/logo.png" alt="VeriSync Logo" width="120" />
-  <h1>VeriSync Attendance Management</h1>
-  <p><strong>A modern, full-stack attendance management system with role-based portals for Admins, Teachers, and Students.</strong></p>
+# VeriSync — Attendance-Only Frontend MVP
 
-  <!-- Replace these badges with real ones if needed -->
-  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
-  <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" />
-  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" />
-  <img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white" />
-</div>
+VeriSync is a professional, responsive, SaaS-style frontend prototype for Patna Women's College MCA second-year attendance operations.
 
-<br />
+The codebase uses only:
 
-## 📸 Screenshots
-> **📸 ADDING YOUR PICTURES:**
-> 1. Create a `images` folder inside your `docs` folder if it doesn't exist (`docs/images/`).
-> 2. Paste your project screenshots in that folder.
-> 3. Update the file names in the `![Alt Text](./docs/images/your_picture_name.png)` links below to match your actual image file names!
+- HTML
+- CSS
+- Vanilla JavaScript
+- Browser `localStorage` for demo persistence
+- Canvas APIs for charts
 
-<details open>
-<summary><b>1. Admin Dashboard</b> <i>(Click to expand/collapse)</i></summary>
-<br/>
+No framework, build tool, package installation or external icon library is required.
 
-<!-- ADD ADMIN DASHBOARD PICTURE HERE by updating the filename -->
-![Admin Dashboard Overview](./docs/images/admin_dashboard.png)
-*Overview of the administrative interface with analytics and system management.*
+## Product scope
 
-</details>
+This MVP is intentionally limited to attendance-related functions:
 
-<details>
-<summary><b>2. Teacher Portal</b> <i>(Click to expand/collapse)</i></summary>
-<br/>
+- Separate Admin, Teacher and Student portals
+- Separate login pages
+- Teacher and student registration pages
+- College, session, semester and teaching-start configuration
+- Official subject master
+- Teacher and student records
+- Teacher-to-subject assignments
+- Secure course-authorisation code generation
+- Authorised teacher course creation
+- Google Classroom-inspired attendance course cards
+- Class schedule
+- Dynamic attendance-session frontend
+- QR-like token display and validation simulation
+- Face and liveness verification UI simulation
+- Device-integrity workflow simulation
+- Attendance records
+- Monthly attendance matrices
+- `1`, `0`, `H`, `C` and `NA` status logic
+- Mid-month semester-start handling
+- Holiday and vacation handling
+- Daily, weekly, monthly and subject-wise analytics
+- Attendance-shortage warnings
+- Teacher recommendation and admin approval for corrections
+- CSV exports
+- Security and audit screens
+- Light and dark appearance
+- Responsive desktop, tablet and mobile layouts
 
-<!-- ADD TEACHER PORTAL PICTURE HERE by updating the filename -->
-![Teacher Portal View](./docs/images/teacher_portal.png)
-*Teacher dashboard showing assigned courses, schedules, and live attendance tracking.*
+It does not contain course chat, teacher-student messaging, study-material uploads, academic assignment creation, assignment submission or student-post approval.
 
-</details>
+## Start the project
 
-<details>
-<summary><b>3. Student Portal</b> <i>(Click to expand/collapse)</i></summary>
-<br/>
+### Recommended method
 
-<!-- ADD STUDENT PORTAL PICTURE HERE by updating the filename -->
-![Student Portal View](./docs/images/student_portal.png)
-*Student view for checking attendance records and joining sessions securely.*
+Open a terminal inside the project folder and run:
 
-</details>
-
-<details>
-<summary><b>4. Live Verification / QR Flow</b> <i>(Click to expand/collapse)</i></summary>
-<br/>
-
-<!-- ADD VERIFICATION / QR PICTURE HERE by updating the filename -->
-![Verification Flow](./docs/images/verification_flow.png)
-*Live attendance verification process via OTP/QR capabilities.*
-
-</details>
-
-## 🚀 Overview
-
-VeriSync is a comprehensive attendance tracking and management system tailored for modern educational institutions. It brings reliability, security, and a premium "Aurora" user experience to the academic workflow.
-
-### ✨ Key Features
-- **Role-Based Access Control:** Distinct, fully-featured portals for Admins, Teachers, and Students.
-- **Advanced Authentication:** Features secure OTP/QR verification workflows for attendance tracking.
-- **Dynamic Dashboards:** Real-time metrics and charts powered by Recharts.
-- **Premium UI/UX:** Built with React, Tailwind CSS, and a sleek glassmorphism aesthetic supporting Light/Dark themes.
-- **Robust Backend:** Scalable API built on NestJS and Prisma ORM.
-
-## 🏗️ Project Structure
-
-This project follows a clean monorepo-style structure separating concerns:
-
-```text
-VeriSync_Attendance/
-├── frontend_v2/      # The main React application (Vite, TS, Tailwind, Zustand)
-├── backend/          # The NestJS API server (Prisma, Database Models, Services)
-├── docs/             # Technical documentation and guides (and images!)
-└── my_mvp/           # Legacy HTML/CSS/JS frontend prototype
+```bash
+python -m http.server 8000
 ```
 
-## ⚙️ Getting Started
+Then open:
 
-### 1. Backend Setup
+```text
+http://localhost:8000
+```
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up your `.env` variables for the database connection.
-4. Run Prisma migrations:
-   ```bash
-   npx prisma migrate dev
-   ```
-5. Start the development server:
-   ```bash
-   npm run start:dev
-   ```
+You may also open `index.html` directly, but a local web server gives more consistent browser behaviour.
 
-### 2. Frontend Setup
+## Demo credentials
 
-1. Open a new terminal and navigate to the modern frontend directory:
-   ```bash
-   cd frontend_v2
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
-4. Open the application in your browser at `http://localhost:5173`.
+### Admin
 
-## 🔐 Default Demo Accounts
+- Email: `admin@pwc.edu.in`
+- Password: `admin123`
 
-If database seeding is enabled, use the following default credentials to explore the portals:
+### Teacher
 
-| Role    | Email                  | Password   |
-|---------|------------------------|------------|
-| Admin   | `admin@pwc.edu.in`     | `admin123` |
-| Teacher | `teacher@pwc.edu.in`   | `teacher123`|
-| Student | `student@pwc.edu.in`   | `student123`|
+- Email: `teacher@pwc.edu.in`
+- Password: `teacher123`
 
----
-<div align="center">
-  <i>Built with modern web technologies to ensure scalable and secure operations.</i>
-</div>
+### Student
+
+- Email: `student@pwc.edu.in`
+- Password: `student123`
+
+## Demo course-authorisation code
+
+The seeded teacher account can create the Wireless Communication course using:
+
+```text
+Wc7P2kLm9Q
+```
+
+The code is bound to:
+
+- Teacher: Dr. Jagadeesha R. B.
+- Subject: Wireless Communication
+- Session: 2025–2027
+- Semester: IV
+- Section: A
+
+After successful use, its status becomes `Used`.
+
+## Project structure
+
+```text
+verisync-mvp/
+├── index.html
+├── admin-login.html
+├── teacher-login.html
+├── teacher-register.html
+├── student-login.html
+├── student-register.html
+├── admin.html
+├── teacher.html
+├── student.html
+├── css/
+│   └── styles.css
+├── js/
+│   ├── core.js
+│   ├── auth.js
+│   ├── admin.js
+│   ├── teacher.js
+│   └── student.js
+└── README.md
+```
+
+## Important frontend limitation
+
+This is a frontend MVP. The following are visual or local-browser simulations and are not secure production implementations:
+
+- Authentication
+- Email OTP verification
+- Face recognition
+- Liveness detection
+- Camera capture
+- Device fingerprinting
+- Dynamic QR encoding and scanning
+- Authorisation-code hashing
+- Role security
+- Database storage
+- Audit immutability
+- File imports
+
+A production system must implement these on a secure backend. Client-side role checks and `localStorage` must never be treated as real security.
+
+## Suggested backend replacement points
+
+The demo database and operations are located in `js/core.js`.
+
+Replace these functions with API calls:
+
+- `VeriSync.login()`
+- `VeriSync.getDB()`
+- `VeriSync.updateDB()`
+- `VeriSync.setSession()`
+- `VeriSync.requireRole()`
+- attendance-session creation
+- QR token generation and validation
+- face-verification result handling
+- correction approval workflows
+- CSV/report generation when server-signed reports are required
+
+Recommended production API groups:
+
+```text
+/api/admin/*
+/api/teacher/*
+/api/student/*
+/api/auth/*
+/api/attendance/*
+/api/verification/*
+/api/reports/*
+```
+
+## Reset demo data
+
+Open the Admin Portal and navigate to:
+
+```text
+System Settings → Demo data controls → Reset all demo data
+```
+
+This restores the initial sample records in the current browser.

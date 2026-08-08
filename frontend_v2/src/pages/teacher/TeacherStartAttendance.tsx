@@ -5,7 +5,7 @@ import {
   Settings2, Fingerprint, Smartphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDataStore } from '@/store/useDataStore';
+import { useDataStore, fetchWithAuth } from '@/store/useDataStore';
 import { useAppStore } from '@/store/useAppStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -53,29 +53,24 @@ export default function TeacherStartAttendance() {
     if (verification === 'dynamic_qr') method = 'DYNAMIC_QR';
 
     try {
-      const token = sessionStorage.getItem('verisync_token');
-      const res = await fetch('http://localhost:3001/attendance/start', {
+      const data = await fetchWithAuth('/attendance/sessions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           courseId: selectedCourse,
           verificationMethod: method,
-          windowMinutes: parseInt(window)
+          windowMinutes: parseInt(window),
+          teacherId: 'TCH_001' // Mock teacher ID
         })
       });
       
-      const data = await res.json();
       if (data.success) {
-        navigate(`/teacher/attendance/live?sessionId=${data.sessionId}&method=${method}&otp=${data.otp || ''}`);
+        navigate(`/teacher/attendance/live?sessionId=${data.sessionId}&method=${method}&courseId=${selectedCourse}&otp=${data.otp || ''}`);
       } else {
         alert('Failed to start session: ' + data.message);
       }
-    } catch (e) {
-      console.error(e);
-      alert('Network error starting session');
+    } catch (e: any) {
+      console.error("Start Session Error:", e);
+      alert('Error starting session: ' + (e.message || 'Network error'));
     } finally {
       setIsStarting(false);
     }

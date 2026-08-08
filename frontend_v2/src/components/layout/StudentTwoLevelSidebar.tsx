@@ -179,21 +179,18 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Dashboard",
           items: [
-            { icon: <LayoutDashboard size={16} />, label: "Dashboard", href: "/teacher" },
+            { icon: <LayoutDashboard size={16} />, label: "Dashboard", href: "/student" },
           ],
         }
       ],
     },
-    academic: {
-      title: "Academic",
+    courses: {
+      title: "Courses",
       sections: [
         {
-          title: "My Classes",
+          title: "Enrollment",
           items: [
-            { icon: <Book size={16} />, label: "Assigned Subjects", href: "/teacher/academic/subjects" },
-            { icon: <BookOpen size={16} />, label: "My Courses", href: "/teacher/academic/courses" },
-            { icon: <Building size={16} />, label: "Create Course", href: "/teacher/academic/create-course" },
-            { icon: <CalendarDays size={16} />, label: "Class Schedule", href: "/teacher/academic/schedule" },
+            { icon: <BookOpen size={16} />, label: "Enrolled Courses", href: "/student/courses" },
           ],
         },
       ],
@@ -202,24 +199,12 @@ function getSidebarContent(activeSection: string): SidebarContent {
       title: "Attendance",
       sections: [
         {
-          title: "Operations",
+          title: "Tracking",
           items: [
-            { icon: <MonitorPlay size={16} />, label: "Start Attendance", href: "/teacher/attendance/start" },
-            { icon: <Activity size={16} />, label: "Live Attendance", href: "/teacher/attendance/live" },
-            { icon: <ClipboardCheck size={16} />, label: "Attendance Records", href: "/teacher/attendance/records" },
-            { icon: <FileEdit size={16} />, label: "Correction Requests", href: "/teacher/attendance/corrections", badge: "1" },
-            { icon: <FileSpreadsheet size={16} />, label: "Attendance Sheets", href: "/teacher/attendance/sheets" },
-          ],
-        },
-      ],
-    },
-    insights: {
-      title: "Insights",
-      sections: [
-        {
-          title: "Analytics",
-          items: [
-            { icon: <PieChart size={16} />, label: "Reports & Analytics", href: "/teacher/insights/reports" },
+            { icon: <Activity size={16} />, label: "Mark Attendance", href: "/student/attendance/mark" },
+            { icon: <ClipboardCheck size={16} />, label: "Attendance History", href: "/student/attendance/history" },
+            { icon: <BarChart2 size={16} />, label: "Attendance Analytics", href: "/student/attendance/analytics" },
+            { icon: <FileEdit size={16} />, label: "Correction Requests", href: "/student/attendance/corrections", badge: "0" },
           ],
         },
       ],
@@ -230,9 +215,9 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Schedules",
           items: [
-            { icon: <Palmtree size={16} />, label: "Holidays & Breaks", href: "/teacher/holidays" },
-            { icon: <CalendarDays size={16} />, label: "Academic Calendar", href: "/teacher/academic-calendar" },
-            { icon: <Clock size={16} />, label: "Daily Time Table", href: "/teacher/time-table" },
+            { icon: <Palmtree size={16} />, label: "Holidays & Breaks", href: "/student/calendar/holidays" },
+            { icon: <CalendarDays size={16} />, label: "Academic Calendar", href: "/student/calendar/academic" },
+            { icon: <Clock size={16} />, label: "Daily Time Table", href: "/student/calendar/timetable" },
           ],
         },
       ],
@@ -243,9 +228,9 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Settings",
           items: [
-            { icon: <User size={16} />, label: "My Profile", href: "/teacher/account/profile" },
-            { icon: <ShieldAlert size={16} />, label: "Security", href: "/teacher/account/security" },
-            { icon: <Settings size={16} />, label: "Settings", href: "/teacher/account/settings" },
+            { icon: <User size={16} />, label: "My Profile", href: "/student/account/profile" },
+            { icon: <ShieldAlert size={16} />, label: "Security", href: "/student/account/security" },
+            { icon: <Settings size={16} />, label: "Settings", href: "/student/account/settings" },
           ],
         },
       ],
@@ -293,9 +278,8 @@ function IconNavigation({
   
   const navItems = [
     { id: "overview", icon: <LayoutDashboard size={20} />, label: "Overview" },
-    { id: "academic", icon: <BookOpen size={20} />, label: "Academic" },
-    { id: "attendance", icon: <ClipboardCheck size={20} />, label: "Attendance" },
-    { id: "insights", icon: <LineChart size={20} />, label: "Insights" },
+    { id: "courses", icon: <BookOpen size={20} />, label: "Courses" },
+    { id: "attendance", icon: <Activity size={20} />, label: "Attendance" },
     { id: "calendar", icon: <CalendarDays size={20} />, label: "Calendar" },
     { id: "account", icon: <UserCircle size={20} />, label: "Account" },
   ];
@@ -627,16 +611,15 @@ function MenuSection({
 
 /* --------------------------------- Layout -------------------------------- */
 
-export function TeacherTwoLevelSidebar() {
+export function StudentTwoLevelSidebar() {
   const location = useLocation();
   
   const getInitialSection = () => {
     const path = location.pathname;
-    if (path.includes('/teacher/holidays') || path.includes('/teacher/academic-calendar') || path.includes('/teacher/time-table')) return 'calendar';
-    if (path.includes('/teacher/academic')) return 'academic';
-    if (path.includes('/teacher/attendance')) return 'attendance';
-    if (path.includes('/teacher/insights')) return 'insights';
-    if (path.includes('/teacher/account')) return 'account';
+    if (path.includes('/student/calendar')) return 'calendar';
+    if (path.includes('/student/courses')) return 'courses';
+    if (path.includes('/student/attendance')) return 'attendance';
+    if (path.includes('/student/account')) return 'account';
     return 'overview';
   };
 
@@ -666,4 +649,4 @@ export function TeacherTwoLevelSidebar() {
   );
 }
 
-export default TeacherTwoLevelSidebar;
+export default StudentTwoLevelSidebar;

@@ -41,10 +41,26 @@ import TeacherReportsAnalytics from '@/pages/teacher/TeacherReportsAnalytics';
 import TeacherMyProfile from '@/pages/teacher/TeacherMyProfile';
 import TeacherSecurity from '@/pages/teacher/TeacherSecurity';
 import TeacherSettings from '@/pages/teacher/TeacherSettings';
+import TeacherHolidays from '@/pages/teacher/TeacherHolidays';
+import TeacherAcademicCalendar from '@/pages/teacher/TeacherAcademicCalendar';
+import TeacherTimeTable from '@/pages/teacher/TeacherTimeTable';
 
 // Student pages
 import StudentDashboard from '@/pages/student/StudentDashboard';
 import StudentMockJoin from '@/pages/student/StudentMockJoin';
+import StudentCourses from '@/pages/student/StudentCourses';
+import StudentSchedule from '@/pages/student/StudentSchedule';
+import StudentMarkAttendance from '@/pages/student/StudentMarkAttendance';
+import StudentAttendanceHistory from '@/pages/student/StudentAttendanceHistory';
+import StudentAnalytics from '@/pages/student/StudentAnalytics';
+import StudentCorrections from '@/pages/student/StudentCorrections';
+import StudentHolidays from '@/pages/student/StudentHolidays';
+import StudentAcademicCalendar from '@/pages/student/StudentAcademicCalendar';
+import StudentTimeTable from '@/pages/student/StudentTimeTable';
+import StudentProfile from '@/pages/student/StudentProfile';
+import StudentSecurity from '@/pages/student/StudentSecurity';
+import StudentSettings from '@/pages/student/StudentSettings';
+
 import RegisterPage from '@/pages/RegisterPage';
 
 /**
@@ -57,6 +73,10 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 
 function TeacherGuard({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute requiredRole="teacher">{children}</ProtectedRoute>;
+}
+
+function StudentGuard({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute requiredRole="student">{children}</ProtectedRoute>;
 }
 
 function App() {
@@ -114,12 +134,34 @@ function App() {
         
         <Route path="/teacher/insights/reports" element={<TeacherGuard><TeacherReportsAnalytics /></TeacherGuard>} />
         
+        <Route path="/teacher/holidays" element={<TeacherGuard><TeacherHolidays /></TeacherGuard>} />
+        <Route path="/teacher/academic-calendar" element={<TeacherGuard><TeacherAcademicCalendar /></TeacherGuard>} />
+        <Route path="/teacher/time-table" element={<TeacherGuard><TeacherTimeTable /></TeacherGuard>} />
+
         <Route path="/teacher/account/profile" element={<TeacherGuard><TeacherMyProfile /></TeacherGuard>} />
         <Route path="/teacher/account/security" element={<TeacherGuard><TeacherSecurity /></TeacherGuard>} />
         <Route path="/teacher/account/settings" element={<TeacherGuard><TeacherSettings /></TeacherGuard>} />
 
-        {/* Student routes (no guard yet — add StudentGuard when ready) */}
-        <Route path="/student" element={<StudentDashboard />} />
+        {/* ────────────────────────────────────────────────────────────
+            STUDENT ROUTES — wrapped in StudentGuard.
+        ──────────────────────────────────────────────────────────── */}
+        <Route path="/student" element={<StudentGuard><StudentDashboard /></StudentGuard>} />
+        <Route path="/student/courses" element={<StudentGuard><StudentCourses /></StudentGuard>} />
+        <Route path="/student/schedule" element={<StudentGuard><StudentSchedule /></StudentGuard>} />
+        
+        <Route path="/student/attendance/mark" element={<StudentGuard><StudentMarkAttendance /></StudentGuard>} />
+        <Route path="/student/attendance/history" element={<StudentGuard><StudentAttendanceHistory /></StudentGuard>} />
+        <Route path="/student/attendance/analytics" element={<StudentGuard><StudentAnalytics /></StudentGuard>} />
+        <Route path="/student/attendance/corrections" element={<StudentGuard><StudentCorrections /></StudentGuard>} />
+        
+        <Route path="/student/calendar/holidays" element={<StudentGuard><StudentHolidays /></StudentGuard>} />
+        <Route path="/student/calendar/academic" element={<StudentGuard><StudentAcademicCalendar /></StudentGuard>} />
+        <Route path="/student/calendar/timetable" element={<StudentGuard><StudentTimeTable /></StudentGuard>} />
+        
+        <Route path="/student/account/profile" element={<StudentGuard><StudentProfile /></StudentGuard>} />
+        <Route path="/student/account/security" element={<StudentGuard><StudentSecurity /></StudentGuard>} />
+        <Route path="/student/account/settings" element={<StudentGuard><StudentSettings /></StudentGuard>} />
+
         <Route path="/student/mock-join" element={<StudentMockJoin />} />
 
         {/* Catch-all */}
