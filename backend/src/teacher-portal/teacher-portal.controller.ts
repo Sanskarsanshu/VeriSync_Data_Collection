@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, Param, Query } from '@nestjs/common';
 import { TeacherPortalService } from './teacher-portal.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request } from 'express';
@@ -12,5 +12,18 @@ export class TeacherPortalController {
   getDashboard(@Req() req: Request) {
     const user = (req as any).user;
     return this.teacherPortalService.getDashboard(user.userId);
+  }
+
+  @Get('courses/:courseId/students')
+  getCourseStudents(@Param('courseId') courseId: string) {
+    return this.teacherPortalService.getCourseStudents(courseId);
+  }
+
+  @Get('courses/:courseId/attendance-sheet')
+  getAttendanceSheet(
+    @Param('courseId') courseId: string,
+    @Query('month') monthName: string
+  ) {
+    return this.teacherPortalService.getAttendanceSheet(courseId, monthName);
   }
 }

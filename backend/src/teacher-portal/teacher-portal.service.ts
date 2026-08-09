@@ -40,30 +40,16 @@ export class TeacherPortalService {
       orderBy: { startTime: 'asc' }
     });
 
-    // Fallback: If no timetable rules exist in the DB, mock it using the courses the teacher has
     let mappedSchedule = todaySchedule.map(s => ({
       id: s.id,
       startTime: s.startTime,
       endTime: s.endTime,
-      roomName: s.room,
+      roomName: s.room || 'TBA',
       subjectName: s.course.subject.name,
       subjectCode: s.course.subject.code,
       sectionName: s.course.section.name,
       courseId: s.course.id
     }));
-
-    if (mappedSchedule.length === 0 && courses.length > 0) {
-      mappedSchedule = courses.map((course, idx) => ({
-        id: `mock-schedule-${idx}`,
-        startTime: `${9 + idx}:00 AM`,
-        endTime: `${10 + idx}:00 AM`,
-        roomName: `Room 40${idx + 1}`,
-        subjectName: course.subject.name,
-        subjectCode: course.subject.code,
-        sectionName: course.section.name,
-        courseId: course.id
-      }));
-    }
 
     return {
       teacherId: teacher.id,
@@ -76,6 +62,89 @@ export class TeacherPortalService {
         sectionName: c.section.name,
         capacity: c.section.capacity
       }))
+    };
+  }
+
+  async getCourseStudents(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: { section: true }
+    });
+
+    if (!course) throw new NotFoundException('Course not found');
+
+    const students = await this.prisma.student.findMany({
+      where: { sectionId: course.sectionId, status: 'ACTIVE' },
+      include: { profile: true },
+      orderBy: { rollNumber: 'asc' }
+    });
+
+    return students.map(s => ({
+      id: s.id,
+      rollNumber: s.rollNumber,
+      name: s.name,
+      photoUrl: s.profile?.photoUrl || null
+    }));
+  }
+
+  async getAttendanceSheet(courseId: string, monthName: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: { section: true, subject: true }
+    });
+
+    if (!course) throw new NotFoundException('Course not found');
+
+    // Parse month (e.g. "August" to month index)
+    const monthIndex = new Date(`${monthName} 1, 2026`).getMonth();
+    const startDate = new Date(2026, monthIndex, 1);
+    const endDate = new Date(2026, monthIndex + 1, 0, 23, 59, 59);
+
+    const students = await this.prisma.student.findMany({
+      where: { sectionId: course.sectionId, status: 'ACTIVE' },
+      orderBy: { rollNumber: 'asc' }
+    });
+
+    // Get all sessions for this course in the month
+    const sessions = await this.prisma.attendanceSession.findMany({
+      where: {
+        scheduledClass: {
+          courseId: course.id,
+          date: { gte: startDate, lte: endDate }
+        }
+      },
+      include: { scheduledClass: true, records: true }
+    });
+
+    const daysInMonth = endDate.getDate();
+    const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    const attendanceData = students.map(student => {
+      const studentDays = daysArray.map(day => {
+        // Find session for this day
+        const daySession = sessions.find(s => s.scheduledClass.date.getDate() === day);
+        if (!daySession) return '-'; // No class
+
+        const record = daySession.records.find(r => r.studentId === student.id);
+        if (!record) return 'A'; // Has class but no record -> Absent
+        if (record.status === 'PRESENT') return 'P';
+        if (record.status === 'LATE') return 'L';
+        return 'A';
+      });
+
+      return {
+        id: student.id,
+        roll: student.rollNumber,
+        name: student.name,
+        attendance: studentDays
+      };
+    });
+
+    return {
+      courseName: course.subject.name,
+      month: monthName,
+      daysInMonth,
+      students: attendanceData
     };
   }
 }
