@@ -28,7 +28,7 @@ export default function TeacherAttendanceSheets() {
   const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
   const initialMonth = MONTHS_LATEST_FIRST.includes(currentMonthName) ? currentMonthName : 'August';
   
-  const { token } = useAppStore();
+  const token = sessionStorage.getItem('verisync_token');
   
   const [filterMonth, setFilterMonth] = useState(initialMonth);
   const [filterCourseId, setFilterCourseId] = useState('');

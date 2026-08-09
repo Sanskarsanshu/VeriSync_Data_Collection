@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 interface SocialLink {
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   href: string;
 }
 

@@ -103,9 +103,9 @@ const DetailView = ({ student, onBack }: { student: Student, onBack: () => void 
 
   const availableCourses = React.useMemo(() => {
     if (!currentTeacher || !currentTeacher.semesterSubjects || !filterSession) return [];
-    const semMap: Record<string, string> = {
-      "1st Year - I Sem": "1",
-      "2nd Year - III Sem": "3"
+    const semMap: Record<string, number> = {
+      "1st Year - I Sem": 1,
+      "2nd Year - III Sem": 3
     };
     const sem = semMap[filterSession];
     return currentTeacher.semesterSubjects[sem] || [];

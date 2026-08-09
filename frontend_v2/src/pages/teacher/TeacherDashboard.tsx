@@ -137,7 +137,7 @@ export default function TeacherDashboard() {
   }
 
   const assignedSubjectsCount = data?.courses?.length || 0;
-  const activeCoursesCount = data?.todaySchedule?.length > 0 ? new Set(data.todaySchedule.map(s => s.courseId)).size : 0;
+  const activeCoursesCount = data?.todaySchedule && data.todaySchedule.length > 0 ? new Set(data.todaySchedule.map(s => s.courseId)).size : 0;
 
   return (
     <DashboardLayout role="teacher">
