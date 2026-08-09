@@ -4,6 +4,7 @@ import { FileSpreadsheet, Search, Download, Filter, User, Loader2 } from 'lucide
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/useAppStore';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const MONTHS_LATEST_FIRST = ['December','November','October','September','August','July','June','May','April','March','February','January'];
 
 interface Course {
@@ -42,7 +43,7 @@ export default function TeacherAttendanceSheets() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/teacher-portal/dashboard', {
+        const res = await fetch(`${API_BASE}/teacher-portal/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -67,7 +68,7 @@ export default function TeacherAttendanceSheets() {
       if (!filterCourseId || !filterMonth) return;
       setIsFetchingSheet(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/teacher-portal/courses/${filterCourseId}/attendance-sheet?month=${filterMonth}`, {
+        const res = await fetch(`${API_BASE}/teacher-portal/courses/${filterCourseId}/attendance-sheet?month=${filterMonth}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
