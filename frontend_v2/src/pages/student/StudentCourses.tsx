@@ -1,55 +1,60 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { BookOpen, UserCircle2, ArrowRight, Book, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useAppStore } from '@/store/useAppStore';
+import { Card, CardContent } from '@/components/ui/card';
+import { BookOpen, UserCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
-const MOCK_COURSES = [
-  {
-    id: 1,
-    name: "Advanced Database Management System",
-    code: "MCA102",
-    faculty: "Dr. Praveen Kumar",
-    credits: 4,
-    attended: 42,
-    total: 50,
-    status: "good"
-  },
-  {
-    id: 2,
-    name: "Software Engineering",
-    code: "MCA104",
-    faculty: "Richa Verma",
-    credits: 3,
-    attended: 31,
-    total: 35,
-    status: "good"
-  },
-  {
-    id: 3,
-    name: "Design & Analysis of Algorithms",
-    code: "MCA106",
-    faculty: "Bhawna Sinha",
-    credits: 4,
-    attended: 28,
-    total: 42,
-    status: "warning" // < 75%
-  },
-  {
-    id: 4,
-    name: "Web Technologies",
-    code: "MCA108",
-    faculty: "Susmita",
-    credits: 3,
-    attended: 25,
-    total: 30,
-    status: "good"
-  }
-];
+interface CourseData {
+  id: string;
+  code: string;
+  name: string;
+  credits: number;
+  isPractical: boolean;
+  teacherName: string;
+}
 
 export default function StudentCourses() {
-  const user = useAppStore(state => state.user);
+  const [courses, setCourses] = useState<CourseData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Mocking the specific Semester III data requested by the user
+    const mockCourses: CourseData[] = [
+      { id: '1', code: 'CC310', name: 'Advanced Web Designing using J2EE', credits: 4, isPractical: false, teacherName: 'Dr. Praveen Kumar' },
+      { id: '2', code: 'CC311', name: 'Cloud Computing', credits: 4, isPractical: false, teacherName: 'Braj Kishor Prasad' },
+      { id: '3', code: 'CC312', name: 'Big Data Analytics', credits: 4, isPractical: false, teacherName: 'Dr. Sushmita Chakraborty' },
+      { id: '4', code: 'CC313', name: 'Mini Project II (Lab)', credits: 2, isPractical: true, teacherName: 'Dr. Praveen Kumar, Richa Verma, Braj Kishor Prasad, Dr. Sushmita Chakraborty, Bhawna Sinha' },
+      { id: '5', code: 'MDC302', name: 'Digital Marketing and E-Commerce', credits: 3, isPractical: false, teacherName: 'Bhawna Sinha, Richa Verma' },
+    ];
+    
+    setCourses(mockCourses);
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout role="student">
+        <div className="flex h-[80vh] items-center justify-center flex-col gap-4 text-student-500">
+          <Loader2 className="w-12 h-12 animate-spin" />
+          <p className="font-medium animate-pulse text-muted-foreground">Loading your courses...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout role="student">
+        <div className="flex h-[80vh] items-center justify-center flex-col gap-4 p-6 text-center">
+          <div className="p-4 bg-rose-500/10 rounded-full">
+            <AlertCircle className="w-12 h-12 text-rose-500" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mt-2">Error</h2>
+          <p className="text-muted-foreground max-w-md">{error}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="student">
@@ -59,24 +64,27 @@ export default function StudentCourses() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20 shadow-inner">
-                <BookOpen className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <div className="w-10 h-10 rounded-xl bg-student-500/10 flex items-center justify-center border border-student-500/20 shadow-inner">
+                <BookOpen className="w-5 h-5 text-student-600 dark:text-student-400" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Enrolled Courses</h1>
             </div>
             <p className="text-sm text-muted-foreground max-w-2xl">
-              Overview of all active subjects for the current semester and your attendance standing in each.
+              Overview of all active subjects for the current semester that you are enrolled in.
             </p>
           </div>
         </div>
 
         {/* Courses Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {MOCK_COURSES.map((course) => {
-            const percentage = Math.round((course.attended / course.total) * 100);
-            const isWarning = percentage < 75;
-            
-            return (
+        {courses.length === 0 ? (
+           <div className="p-12 border border-dashed border-border/50 rounded-3xl flex flex-col items-center justify-center text-center bg-card/50">
+             <BookOpen className="w-12 h-12 text-muted-foreground/30 mb-4" />
+             <h3 className="text-lg font-bold text-foreground">No Courses Found</h3>
+             <p className="text-sm text-muted-foreground mt-2 max-w-sm">You are not currently enrolled in any courses for this semester.</p>
+           </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {courses.map((course) => (
               <Card key={course.id} className="border border-border shadow-sm rounded-2xl bg-card overflow-hidden hover:shadow-md transition-shadow group">
                 <CardContent className="p-0">
                   <div className="p-6">
@@ -89,63 +97,27 @@ export default function StudentCourses() {
                           <span className="text-xs font-bold text-muted-foreground">
                             {course.credits} Credits
                           </span>
+                          {course.isPractical && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                              Practical
+                            </span>
+                          )}
                         </div>
-                        <h3 className="text-xl font-bold text-foreground leading-tight group-hover:text-violet-500 transition-colors">
+                        <h3 className="text-xl font-bold text-foreground leading-tight group-hover:text-student-500 transition-colors">
                           {course.name}
                         </h3>
                         <div className="flex items-center gap-1.5 mt-2 text-sm text-muted-foreground font-medium">
                           <UserCircle2 className="w-4 h-4" />
-                          {course.faculty}
+                          {course.teacherName}
                         </div>
                       </div>
-                      
-                      <div className={`shrink-0 p-3 rounded-full ${isWarning ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                        {isWarning ? <AlertCircle className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
-                      </div>
                     </div>
-
-                    <div className="mt-8">
-                      <div className="flex items-end justify-between mb-2">
-                        <div className="space-y-1">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Attendance</span>
-                          <div className="flex items-baseline gap-2">
-                            <span className={`text-3xl font-extrabold ${isWarning ? 'text-rose-500' : 'text-foreground'}`}>
-                              {percentage}%
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {course.attended} / {course.total} classes
-                        </span>
-                      </div>
-                      
-                      {/* Progress Bar */}
-                      <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${isWarning ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      {isWarning && (
-                        <p className="text-xs font-medium text-rose-500 mt-2">
-                          ⚠ Warning: You are below the required 75% attendance threshold.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/30 border-t border-border/50 p-3 flex justify-end">
-                    <Button variant="ghost" className="text-violet-600 hover:text-violet-700 hover:bg-violet-500/10 gap-2 h-9">
-                      View Details
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
-
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

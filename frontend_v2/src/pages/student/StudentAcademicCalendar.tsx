@@ -5,9 +5,9 @@ import { EventManager, type Event } from "@/components/ui/event-manager";
 
 const pwcEvents: Event[] = [
   // Academic Milestones
-  { id: "e1", title: "Regular Classes Begin", startTime: new Date(2026, 6, 1, 9, 0), endTime: new Date(2026, 6, 1, 15, 0), color: "blue", category: "Academic" },
-  { id: "e2", title: "College Re-opens", startTime: new Date(2026, 9, 22, 9, 0), endTime: new Date(2026, 9, 22, 15, 0), color: "blue", category: "Academic" },
-  { id: "e3", title: "College Re-opens", startTime: new Date(2026, 10, 17, 9, 0), endTime: new Date(2026, 10, 17, 15, 0), color: "blue", category: "Academic" },
+  { id: "e1", title: "Regular Classes Begin", startTime: new Date(2026, 6, 1, 9, 0), endTime: new Date(2026, 6, 1, 15, 0), color: "student", category: "Academic" },
+  { id: "e2", title: "College Re-opens", startTime: new Date(2026, 9, 22, 9, 0), endTime: new Date(2026, 9, 22, 15, 0), color: "student", category: "Academic" },
+  { id: "e3", title: "College Re-opens", startTime: new Date(2026, 10, 17, 9, 0), endTime: new Date(2026, 10, 17, 15, 0), color: "student", category: "Academic" },
 
   // Examinations
   { id: "ex1", title: "Mid Semester Examination", startTime: new Date(2026, 8, 7, 9, 0), endTime: new Date(2026, 8, 12, 16, 0), color: "purple", category: "Examination", tags: ["Sem II, III, IV, VII, VIII"] },
@@ -68,7 +68,7 @@ export default function StudentAcademicCalendar() {
       <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 text-violet-600 text-xs font-semibold mb-3 border border-violet-500/20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-student-500/10 text-student-600 text-xs font-semibold mb-3 border border-student-500/20">
               <CalendarIcon size={14} /> Academic Calendar
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Academic Events</h1>

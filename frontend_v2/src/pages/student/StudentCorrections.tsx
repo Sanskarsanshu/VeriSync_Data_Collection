@@ -42,8 +42,8 @@ export default function StudentCorrections() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20 shadow-inner">
-                <FileEdit className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <div className="w-10 h-10 rounded-xl bg-student-500/10 flex items-center justify-center border border-student-500/20 shadow-inner">
+                <FileEdit className="w-5 h-5 text-student-600 dark:text-student-400" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Correction Requests</h1>
             </div>
@@ -54,7 +54,7 @@ export default function StudentCorrections() {
           
           <Button 
             onClick={() => setShowModal(true)}
-            className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20 transition-all font-semibold gap-2"
+            className="rounded-xl bg-student-600 hover:bg-student-700 text-white shadow-lg shadow-student-500/20 transition-all font-semibold gap-2"
           >
             <Plus className="w-4 h-4" />
             New Request
@@ -86,7 +86,7 @@ export default function StudentCorrections() {
                     {req.teacherNote && (
                       <div className="space-y-1 mt-3">
                         <p className="text-xs font-semibold text-muted-foreground uppercase">Faculty Response</p>
-                        <p className="text-sm text-foreground bg-violet-500/5 p-3 rounded-xl border border-violet-500/20">
+                        <p className="text-sm text-foreground bg-student-500/5 p-3 rounded-xl border border-student-500/20">
                           "{req.teacherNote}"
                         </p>
                       </div>

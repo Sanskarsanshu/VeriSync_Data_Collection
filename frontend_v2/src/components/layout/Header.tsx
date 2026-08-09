@@ -50,10 +50,11 @@ export function Header() {
   const profileData = user ? {
     name: user.name,
     email: user.email || '',
-    title: user.role === 'admin' ? 'HOD' : teacherTitle,
-    avatar: user.role === 'admin' ? '/features/Bhawnasinha.png' : 
+    title: user.role === 'admin' ? 'HOD' : user.role === 'student' ? 'STUDENT' : teacherTitle,
+    avatar: user.avatar ? user.avatar :
+            user.role === 'admin' ? '/features/Bhawnasinha.png' : 
             user.role === 'teacher' ? teacherAvatar : 
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=10b981&color=fff`
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=8b5cf6&color=fff`
   } : undefined;
 
   return (

@@ -47,6 +47,7 @@ export type Student = {
   matrix: any;
   faceEnrolled: boolean;
   attendance: number;
+  avatar?: string;
 };
 
 export type CourseAuthorization = {

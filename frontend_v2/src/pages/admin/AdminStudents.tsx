@@ -95,8 +95,12 @@ const DetailView = ({ student, onBack }: { student: Student, onBack: () => void 
       </button>
 
       <div className="flex items-center gap-4 p-5 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 mb-6">
-        <div className="w-12 h-12 rounded-xl text-white flex items-center justify-center font-bold text-lg shadow-sm" style={{ background: student.color }}>
-          {initials(student.name)}
+        <div className="w-12 h-12 rounded-xl text-white flex items-center justify-center font-bold text-lg shadow-sm overflow-hidden" style={{ background: student.color }}>
+          {student.avatar ? (
+            <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
+          ) : (
+            initials(student.name)
+          )}
         </div>
         <div>
           <div className="text-lg font-bold text-foreground">{student.name}</div>
@@ -377,10 +381,14 @@ export default function AdminStudents() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div 
-                            className="w-10 h-10 rounded-full text-emerald-700 flex items-center justify-center font-bold"
-                            style={{ backgroundColor: student.color + '20' }} // adding transparency for light background
+                            className="w-10 h-10 rounded-full text-emerald-700 flex items-center justify-center font-bold overflow-hidden"
+                            style={{ backgroundColor: student.color + '20' }}
                           >
-                            {initials(student.name)}
+                            {student.avatar ? (
+                                <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
+                            ) : (
+                                initials(student.name)
+                            )}
                           </div>
                           <div>
                             <p className="font-semibold text-foreground group-hover:text-emerald-500 transition-colors">{student.name}</p>

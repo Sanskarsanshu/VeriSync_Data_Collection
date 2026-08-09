@@ -8,12 +8,460 @@ const AVATAR_COLORS = ['#2F6F5E','#B4517A','#5B6FD6','#C77B3B','#3F8FBF','#7A5FB
 export class StudentsService {
   constructor(private prisma: PrismaService) {}
 
+  async getStudentDashboardData(userId: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { userId },
+      include: {
+        section: {
+          include: {
+            semester: true,
+            courses: {
+              include: {
+                subject: true,
+                primaryTeacher: true
+              }
+            }
+          }
+        },
+        attendanceRecords: {
+          include: {
+            session: {
+              include: {
+                scheduledClass: {
+                  include: {
+                    course: {
+                      include: {
+                        subject: true,
+                        primaryTeacher: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { markedAt: 'desc' },
+        }
+      }
+    });
+
+    if (!student) {
+      throw new Error('Student profile not found for this user');
+    }
+
+    // 1. Attendance Calculations
+    const totalMarkedRecords = student.attendanceRecords.length;
+    const attendedRecords = student.attendanceRecords.filter(r => r.status === 'PRESENT').length;
+    const absentRecords = totalMarkedRecords - attendedRecords;
+    
+    // Safety check: Avoid NaN (0/0)
+    const attendancePercentage = totalMarkedRecords > 0 
+      ? Math.round((attendedRecords / totalMarkedRecords) * 100) 
+      : 0;
+
+    // 2. Today's Schedule (Timetable representation for today)
+    // We will find today's classes from attendance sessions or simulate from courses for now if timetable isn't fully seeded.
+    // Wait, the user specifically said: "Only timetable entries for today's day/date. Use actual timetable/academic schedule data if it exists."
+    
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const todayScheduledClasses = await this.prisma.scheduledClass.findMany({
+      where: {
+        course: { sectionId: student.sectionId },
+        date: { gte: startOfDay, lte: endOfDay }
+      },
+      include: {
+        course: {
+          include: {
+            subject: true,
+            primaryTeacher: true
+          }
+        },
+        attendanceSession: {
+          include: {
+            records: {
+              where: { studentId: student.id }
+            }
+          }
+        }
+      },
+      orderBy: { startTime: 'asc' }
+    });
+
+    const todaySchedule = todayScheduledClasses.map(sc => {
+      const session = sc.attendanceSession;
+      let computedStatus = 'UPCOMING';
+      if (session) {
+        if (session.records.length > 0) {
+          computedStatus = session.records[0].status;
+        } else if (session.status === 'CLOSED') {
+          computedStatus = 'MISSED';
+        } else {
+          computedStatus = session.status;
+        }
+      } else if (sc.isCancelled) {
+        computedStatus = 'CANCELLED';
+      }
+
+      return {
+        id: sc.id,
+        courseName: sc.course.subject.name,
+        teacherName: sc.course.primaryTeacher?.name || 'Unknown',
+        room: 'TBD', // Schema TimetableRule has room, but ScheduledClass doesn't directly.
+        startTime: sc.startTime,
+        endTime: sc.endTime,
+        status: computedStatus
+      };
+    });
+
+    // 3. Recent History (Top 5)
+    const recentAttendance = student.attendanceRecords.slice(0, 5).map(record => ({
+      id: record.id,
+      courseName: record.session.scheduledClass.course.subject.name,
+      date: record.markedAt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+      status: record.status
+    }));
+
+    // 4. Courses (Brief summary)
+    const courses = student.section?.courses.map(c => ({
+      id: c.id,
+      code: c.subject.code,
+      name: c.subject.name,
+      teacherName: c.primaryTeacher?.name || 'Unassigned'
+    })) || [];
+
+    return {
+      student: {
+        name: student.name,
+        rollNumber: student.rollNumber,
+        semester: student.section?.semester?.semesterNumber || 3
+      },
+      attendance: {
+        percentage: attendancePercentage,
+        attended: attendedRecords,
+        total: totalMarkedRecords,
+        absent: absentRecords
+      },
+      courses,
+      todaySchedule,
+      recentAttendance
+    };
+  }
+
+  async getStudentCourses(userId: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { userId },
+      include: {
+        section: {
+          include: {
+            courses: {
+              include: {
+                subject: true,
+                primaryTeacher: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!student) throw new Error('Student not found');
+
+    return student.section?.courses.map(c => ({
+      id: c.id,
+      code: c.subject.code,
+      name: c.subject.name,
+      credits: c.subject.credits,
+      isPractical: c.subject.isPractical,
+      teacherName: c.primaryTeacher?.name || 'Unassigned'
+    })) || [];
+  }
+
+  async getStudentAttendance(userId: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { userId },
+      include: {
+        attendanceRecords: {
+          include: {
+            session: {
+              include: {
+                scheduledClass: {
+                  include: {
+                    course: {
+                      include: {
+                        subject: true,
+                        primaryTeacher: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { markedAt: 'desc' }
+        }
+      }
+    });
+
+    if (!student) throw new Error('Student not found');
+
+    return student.attendanceRecords.map(r => ({
+      id: r.id,
+      date: r.markedAt.toISOString(),
+      courseCode: r.session.scheduledClass.course.subject.code,
+      courseName: r.session.scheduledClass.course.subject.name,
+      faculty: r.session.scheduledClass.course.primaryTeacher?.name || 'Unknown',
+      time: r.session.scheduledClass.startTime,
+      status: r.status,
+      method: r.session.verificationMethod || 'MANUAL'
+    }));
+  }
+
+  async getStudentTimetable(userId: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { userId }
+    });
+
+    if (!student) throw new Error('Student not found');
+
+    const rules = await this.prisma.timetableRule.findMany({
+      where: {
+        course: { sectionId: student.sectionId }
+      },
+      include: {
+        course: {
+          include: {
+            subject: true,
+            primaryTeacher: true
+          }
+        }
+      },
+      orderBy: { startTime: 'asc' }
+    });
+
+    const timetable = rules.map(rule => ({
+      id: rule.id,
+      dayOfWeek: rule.dayOfWeek,
+      startTime: rule.startTime,
+      endTime: rule.endTime,
+      room: rule.room || 'TBD',
+      courseName: rule.course.subject.name,
+      courseCode: rule.course.subject.code,
+      teacherName: rule.course.primaryTeacher?.name || 'Unassigned'
+    }));
+
+    // Group by DayOfWeek to make it easier for frontend
+    const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+    const grouped = days.reduce((acc, day) => {
+      acc[day] = timetable.filter(t => t.dayOfWeek === day);
+      return acc;
+    }, {} as Record<string, typeof timetable>);
+
+    return grouped;
+  }
+
+  async getActiveSession(userId: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { userId }
+    });
+    if (!student) throw new Error('Student not found');
+
+    const activeSession = await this.prisma.attendanceSession.findFirst({
+      where: {
+        status: 'LIVE',
+        scheduledClass: {
+          course: { sectionId: student.sectionId }
+        }
+      },
+      include: {
+        scheduledClass: {
+          include: {
+            course: {
+              include: { subject: true, primaryTeacher: true }
+            }
+          }
+        },
+        records: {
+          where: { studentId: student.id }
+        }
+      }
+    });
+
+    if (!activeSession) return null;
+
+    return {
+      sessionId: activeSession.id,
+      courseName: activeSession.scheduledClass.course.subject.name,
+      teacherName: activeSession.scheduledClass.course.primaryTeacher?.name || 'Unknown',
+      room: 'TBD',
+      verificationMethod: activeSession.verificationMethod,
+      alreadyMarked: activeSession.records.length > 0
+    };
+  }
+
+  async markTestAttendance(userId: string, sessionId: string) {
+    const student = await this.prisma.student.findUnique({ where: { userId } });
+    if (!student) throw new Error('Student not found');
+
+    const session = await this.prisma.attendanceSession.findUnique({ where: { id: sessionId } });
+    if (!session || session.status !== 'LIVE') throw new Error('Session is not active');
+
+    const existing = await this.prisma.attendanceRecord.findUnique({
+      where: { sessionId_studentId: { sessionId, studentId: student.id } }
+    });
+
+    if (existing) {
+      return { success: true, alreadyMarked: true };
+    }
+
+    await this.prisma.attendanceRecord.create({
+      data: {
+        sessionId,
+        studentId: student.id,
+        status: 'PRESENT',
+        verificationMethod: session.verificationMethod || 'FACE',
+        markedAt: new Date()
+      }
+    });
+
+    return { success: true };
+  }
+
+  async getStudentAnalytics(userId: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { userId },
+      include: {
+        section: {
+          include: {
+            courses: {
+              include: { subject: true, primaryTeacher: true }
+            }
+          }
+        },
+        attendanceRecords: {
+          include: {
+            session: {
+              include: {
+                scheduledClass: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!student) throw new Error('Student not found');
+
+    const totalRecords = student.attendanceRecords.length;
+    let presentCount = 0;
+    let absentCount = 0;
+    let excusedCount = 0;
+
+    student.attendanceRecords.forEach(r => {
+      if (r.status === 'PRESENT') presentCount++;
+      else if (r.status === 'ABSENT') absentCount++;
+      else excusedCount++;
+    });
+
+    const overall = {
+      presentPct: totalRecords > 0 ? (presentCount / totalRecords) * 100 : 0,
+      absentPct: totalRecords > 0 ? (absentCount / totalRecords) * 100 : 0,
+      excusedPct: totalRecords > 0 ? (excusedCount / totalRecords) * 100 : 0,
+    };
+
+    const courseBreakdown = student.section?.courses.map(course => {
+      const courseRecords = student.attendanceRecords.filter(r => r.session.scheduledClass.courseId === course.id);
+      const cTotal = courseRecords.length;
+      const cPresent = courseRecords.filter(r => r.status === 'PRESENT').length;
+      const cPct = cTotal > 0 ? Math.round((cPresent / cTotal) * 100) : 0;
+      
+      return {
+        courseId: course.id,
+        courseName: course.subject.name,
+        courseCode: course.subject.code,
+        teacherName: course.primaryTeacher?.name || 'Unknown',
+        percentage: cPct
+      };
+    }) || [];
+
+    const riskCourses = courseBreakdown.filter(c => c.percentage < 75 && student.attendanceRecords.some(r => r.session.scheduledClass.courseId === c.courseId));
+
+    return {
+      overall,
+      courseBreakdown,
+      riskCourses
+    };
+  }
+
+  async getStudentProfile(userId: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        profile: true,
+        batch: true,
+        section: {
+          include: {
+            semester: true
+          }
+        }
+      }
+    });
+
+    if (!student) throw new Error('Student not found');
+
+    return {
+      name: student.name,
+      rollNumber: student.rollNumber,
+      email: student.user?.email || student.profile?.email || 'Not provided',
+      mobileNumber: student.profile?.mobileNumber || 'Not provided',
+      dob: student.profile?.dob ? student.profile.dob.toISOString().split('T')[0] : 'Not provided',
+      gender: student.profile?.gender || 'Not specified',
+      bloodGroup: student.profile?.bloodGroup || 'Not specified',
+      photoUrl: student.profile?.photoUrl || null,
+      admissionYear: student.profile?.admissionYear || new Date().getFullYear(),
+      expectedGraduationYear: student.profile?.expectedGraduationYear || (new Date().getFullYear() + 4),
+      batch: student.batch?.name || 'Unassigned Batch',
+      semester: student.section?.semester ? `Semester ${student.section.semester.semesterNumber}` : 'Unassigned Semester',
+      section: student.section?.name || 'Unassigned Section',
+    };
+  }
+
+  async updateProfilePhoto(userId: string, photoUrl: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { userId },
+      include: { profile: true }
+    });
+
+    if (!student) throw new Error('Student not found');
+    
+    if (student.profile) {
+      await this.prisma.studentProfile.update({
+        where: { id: student.profile.id },
+        data: { photoUrl }
+      });
+    } else {
+      await this.prisma.studentProfile.create({
+        data: {
+          studentId: student.id,
+          photoUrl
+        }
+      });
+    }
+
+    return { message: 'Profile photo updated successfully', photoUrl };
+  }
+
   async findAll() {
     const students = await this.prisma.student.findMany({
       include: {
         batch: { include: { session: true } },
         section: true,
         user: true,
+        profile: { select: { photoUrl: true } },
         attendanceRecords: {
           include: { session: { include: { scheduledClass: { include: { course: { include: { subject: true } } } } } } }
         }
@@ -87,6 +535,7 @@ export class StudentsService {
         time: '09:00 AM',
         faceEnrolled: true,
         attendance: overallAttendance,
+        avatar: s.profile?.photoUrl || undefined,
         monthly,
         matrix,
       };

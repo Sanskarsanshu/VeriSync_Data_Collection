@@ -86,6 +86,9 @@ export default function ProtectedRoute({ requiredRole, children }: ProtectedRout
           role: backendRole,
           name: data.name,
           email: data.email,
+          avatar: data.avatar,
+          studentId: data.studentId,
+          rollNumber: data.rollNumber,
         });
 
         setStatus('authorized');

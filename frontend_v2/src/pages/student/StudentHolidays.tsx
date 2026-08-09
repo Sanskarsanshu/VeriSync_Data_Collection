@@ -49,10 +49,10 @@ const mockHolidays = [
 
 const getBadgeStyles = (type: string) => {
   switch (type) {
-    case 'NATIONAL': return 'bg-violet-500/10 text-violet-500 border-violet-500/20';
+    case 'NATIONAL': return 'bg-student-500/10 text-student-500 border-student-500/20';
     case 'FESTIVAL': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
     case 'BREAK': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-    case 'INSTITUTIONAL': return 'bg-fuchsia-500/10 text-fuchsia-500 border-fuchsia-500/20';
+    case 'INSTITUTIONAL': return 'bg-student-500/10 text-student-500 border-student-500/20';
     default: return 'bg-orange-500/10 text-orange-500 border-orange-500/20'; // OFFICIAL_HOLIDAY
   }
 };
@@ -122,7 +122,7 @@ export default function StudentHolidays() {
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 text-violet-600 text-xs font-semibold mb-3 border border-violet-500/20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-student-500/10 text-student-600 text-xs font-semibold mb-3 border border-student-500/20">
               <Palmtree size={14} /> Schedule
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Holidays & Breaks</h1>
@@ -135,7 +135,7 @@ export default function StudentHolidays() {
           {/* Summary / Stats View */}
           <div className="col-span-1 space-y-6">
             <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-fit text-center space-y-4 sticky top-6">
-               <CalendarIcon className="size-10 mx-auto text-violet-500" />
+               <CalendarIcon className="size-10 mx-auto text-student-500" />
                <h3 className="font-semibold text-foreground">Academic Year 26-27</h3>
                <p className="text-xs text-muted-foreground">The system automatically halts all scheduled attendance sessions on these days.</p>
                <div className="pt-4 border-t border-border/50">
@@ -145,7 +145,7 @@ export default function StudentHolidays() {
                  </div>
                  <div className="flex justify-between text-sm">
                    <span className="text-muted-foreground">Upcoming</span>
-                   <span className="font-bold text-violet-600">{upcomingHolidays.length}</span>
+                   <span className="font-bold text-student-600">{upcomingHolidays.length}</span>
                  </div>
                </div>
             </div>
@@ -156,7 +156,7 @@ export default function StudentHolidays() {
             
             <section>
               <div className="flex items-center gap-2 mb-4">
-                <CalendarCheck2 className="text-violet-500" size={20} />
+                <CalendarCheck2 className="text-student-500" size={20} />
                 <h2 className="text-xl font-bold">Upcoming Holidays</h2>
               </div>
               

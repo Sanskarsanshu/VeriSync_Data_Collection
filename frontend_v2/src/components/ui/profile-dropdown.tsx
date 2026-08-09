@@ -46,7 +46,7 @@ export function ProfileDropdown({
     const navigate = useNavigate();
 
     const { user } = useAppStore();
-    const rolePrefix = user?.role === 'teacher' ? '/teacher/account' : '/admin';
+    const rolePrefix = user?.role === 'student' ? '/student/account' : user?.role === 'teacher' ? '/teacher/account' : '/admin';
 
     const menuItems: MenuItem[] = [
         {

@@ -49,6 +49,7 @@ import TeacherTimeTable from '@/pages/teacher/TeacherTimeTable';
 import StudentDashboard from '@/pages/student/StudentDashboard';
 import StudentMockJoin from '@/pages/student/StudentMockJoin';
 import StudentCourses from '@/pages/student/StudentCourses';
+import StudentClassSchedule from '@/pages/student/StudentClassSchedule';
 import StudentSchedule from '@/pages/student/StudentSchedule';
 import StudentMarkAttendance from '@/pages/student/StudentMarkAttendance';
 import StudentAttendanceHistory from '@/pages/student/StudentAttendanceHistory';
@@ -147,6 +148,7 @@ function App() {
         ──────────────────────────────────────────────────────────── */}
         <Route path="/student" element={<StudentGuard><StudentDashboard /></StudentGuard>} />
         <Route path="/student/courses" element={<StudentGuard><StudentCourses /></StudentGuard>} />
+        <Route path="/student/courses/schedule" element={<StudentGuard><StudentClassSchedule /></StudentGuard>} />
         <Route path="/student/schedule" element={<StudentGuard><StudentSchedule /></StudentGuard>} />
         
         <Route path="/student/attendance/mark" element={<StudentGuard><StudentMarkAttendance /></StudentGuard>} />

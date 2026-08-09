@@ -50,6 +50,19 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        student: {
+          50: '#fdf2fe',
+          100: '#fae3fc',
+          200: '#f5c4f8',
+          300: '#f097f2',
+          400: '#e75ce8',
+          500: '#5D0565', // Requested user color as primary
+          600: '#4b0451',
+          700: '#4b0451',
+          800: '#39033d',
+          900: '#27022a',
+          950: '#19011b',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

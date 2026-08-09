@@ -77,7 +77,7 @@ function BrandBadge() {
     <div className="relative shrink-0 w-full mb-4">
       <div className="flex items-center p-1 w-full">
         <div className="h-10 w-8 flex items-center justify-center pl-2">
-          <Fingerprint className="size-6 text-blue-500" />
+          <Fingerprint className="size-6 text-student-500" />
         </div>
         <div className="px-2 py-1">
           <div className="font-bold text-[18px] tracking-tight text-white">
@@ -93,7 +93,7 @@ function BrandBadge() {
 
 function AvatarCircle({ initials }: { initials: string }) {
   return (
-    <div className="relative rounded-full shrink-0 size-8 bg-blue-500/20 text-blue-500 font-bold text-xs flex items-center justify-center border border-blue-500/30">
+    <div className="relative rounded-full shrink-0 size-8 bg-student-500/20 text-student-500 font-bold text-xs flex items-center justify-center border border-student-500/30">
       {initials}
     </div>
   );
@@ -190,7 +190,8 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Enrollment",
           items: [
-            { icon: <BookOpen size={16} />, label: "Enrolled Courses", href: "/student/courses" },
+            { icon: <BookOpen size={16} />, label: "Enrolled Courses", href: "/student/courses/schedule" },
+            { icon: <CalendarDays size={16} />, label: "Class Schedule", href: "/student/schedule" },
           ],
         },
       ],
@@ -258,7 +259,7 @@ function IconNavButton({
       type="button"
       title={title}
       className={`flex items-center justify-center rounded-xl size-12 min-w-12 transition-all duration-300
-        ${isActive ? "bg-blue-500/10 text-blue-500 shadow-sm border border-blue-500/20" : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"}`}
+        ${isActive ? "bg-student-500/10 text-student-500 shadow-sm border border-student-500/20" : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"}`}
       style={{ transitionTimingFunction: softSpringEasing }}
       onClick={onClick}
     >
@@ -287,7 +288,7 @@ function IconNavigation({
   return (
     <aside className="bg-card/50 backdrop-blur-md flex flex-col gap-2 items-center py-4 w-20 h-screen border-r border-border z-20">
       {/* Logo */}
-      <div className="mb-6 size-12 flex items-center justify-center bg-blue-500 rounded-xl shadow-lg shadow-blue-500/20">
+      <div className="mb-6 size-12 flex items-center justify-center bg-student-500 rounded-xl shadow-lg shadow-student-500/20">
         <Fingerprint className="size-6 text-white" />
       </div>
 
@@ -473,7 +474,7 @@ function MenuItem({
       <div
         className={`rounded-xl cursor-pointer transition-all duration-300 flex items-center relative ${
           isActive && !item.hasDropdown
-            ? "bg-blue-500 text-white shadow-md shadow-blue-500/20" 
+            ? "bg-student-500 text-white shadow-md shadow-student-500/20" 
             : "text-muted-foreground hover:bg-muted hover:text-foreground"
         } ${isCollapsed ? "w-12 min-w-[48px] h-12 justify-center p-2" : "w-full h-11 px-3"}`}
         style={{ transitionTimingFunction: softSpringEasing }}
@@ -617,7 +618,7 @@ export function StudentTwoLevelSidebar() {
   const getInitialSection = () => {
     const path = location.pathname;
     if (path.includes('/student/calendar')) return 'calendar';
-    if (path.includes('/student/courses')) return 'courses';
+    if (path.includes('/student/courses') || path.includes('/student/schedule')) return 'courses';
     if (path.includes('/student/attendance')) return 'attendance';
     if (path.includes('/student/account')) return 'account';
     return 'overview';

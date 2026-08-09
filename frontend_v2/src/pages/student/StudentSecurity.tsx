@@ -18,8 +18,8 @@ export default function StudentSecurity() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20 shadow-inner">
-                <ShieldCheck className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <div className="w-10 h-10 rounded-xl bg-student-500/10 flex items-center justify-center border border-student-500/20 shadow-inner">
+                <ShieldCheck className="w-5 h-5 text-student-600 dark:text-student-400" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Security</h1>
             </div>
@@ -38,7 +38,7 @@ export default function StudentSecurity() {
             <Card className="border border-border shadow-sm rounded-2xl bg-card">
               <CardHeader className="bg-muted/20 border-b border-border/50 pb-4">
                 <div className="flex items-center gap-2">
-                  <KeyRound className="w-5 h-5 text-violet-500" />
+                  <KeyRound className="w-5 h-5 text-student-500" />
                   <CardTitle className="text-lg">Change Password</CardTitle>
                 </div>
                 <CardDescription>Ensure your account is using a long, random password to stay secure.</CardDescription>
@@ -51,7 +51,7 @@ export default function StudentSecurity() {
                     type="password" 
                     value={password.current}
                     onChange={(e) => setPassword({...password, current: e.target.value})}
-                    className="rounded-xl border-border/50 focus-visible:ring-violet-500" 
+                    className="rounded-xl border-border/50 focus-visible:ring-student-500" 
                   />
                 </div>
                 
@@ -63,7 +63,7 @@ export default function StudentSecurity() {
                       type="password" 
                       value={password.new}
                       onChange={(e) => setPassword({...password, new: e.target.value})}
-                      className="rounded-xl border-border/50 focus-visible:ring-violet-500" 
+                      className="rounded-xl border-border/50 focus-visible:ring-student-500" 
                     />
                   </div>
                   <div className="space-y-2">
@@ -73,13 +73,13 @@ export default function StudentSecurity() {
                       type="password" 
                       value={password.confirm}
                       onChange={(e) => setPassword({...password, confirm: e.target.value})}
-                      className="rounded-xl border-border/50 focus-visible:ring-violet-500" 
+                      className="rounded-xl border-border/50 focus-visible:ring-student-500" 
                     />
                   </div>
                 </div>
                 
                 <div className="pt-2 flex justify-end">
-                  <Button className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20">
+                  <Button className="rounded-xl bg-student-600 hover:bg-student-700 text-white shadow-lg shadow-student-500/20">
                     Update Password
                   </Button>
                 </div>
@@ -91,7 +91,7 @@ export default function StudentSecurity() {
               <CardHeader className="bg-muted/20 border-b border-border/50 pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <History className="w-5 h-5 text-violet-500" />
+                    <History className="w-5 h-5 text-student-500" />
                     <CardTitle className="text-lg">Active Sessions</CardTitle>
                   </div>
                   <Button variant="outline" size="sm" className="h-8 rounded-lg text-rose-500 border-rose-500/20 hover:bg-rose-500/10">
@@ -142,7 +142,7 @@ export default function StudentSecurity() {
             <Card className="border border-border shadow-sm rounded-2xl bg-card">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-fuchsia-500" />
+                  <Lock className="w-5 h-5 text-student-500" />
                   <CardTitle className="text-lg">Two-Factor Auth</CardTitle>
                 </div>
               </CardHeader>

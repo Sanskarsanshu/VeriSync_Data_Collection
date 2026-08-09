@@ -40,9 +40,7 @@ export class AuthController {
 
     return {
       message: 'Logged in successfully',
-      role: user.role,
-      name: me.name,
-      email: user.email,
+      ...me,
       access_token,
     };
   }

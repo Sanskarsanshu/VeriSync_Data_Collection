@@ -48,8 +48,8 @@ export default function StudentSettings() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20 shadow-inner">
-                <Settings2 className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <div className="w-10 h-10 rounded-xl bg-student-500/10 flex items-center justify-center border border-student-500/20 shadow-inner">
+                <Settings2 className="w-5 h-5 text-student-600 dark:text-student-400" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">App Settings</h1>
             </div>
@@ -57,7 +57,7 @@ export default function StudentSettings() {
               Customize your portal experience, appearance, and notification preferences.
             </p>
           </div>
-          <Button className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20 transition-all gap-2">
+          <Button className="rounded-xl bg-student-600 hover:bg-student-700 text-white shadow-lg shadow-student-500/20 transition-all gap-2">
             <Save className="w-4 h-4" /> Save Preferences
           </Button>
         </div>
@@ -68,7 +68,7 @@ export default function StudentSettings() {
           <Card className="border border-border shadow-sm rounded-2xl bg-card">
             <CardHeader className="bg-muted/20 border-b border-border/50 pb-4">
               <div className="flex items-center gap-2">
-                <Monitor className="w-5 h-5 text-violet-500" />
+                <Monitor className="w-5 h-5 text-student-500" />
                 <CardTitle className="text-lg">Appearance</CardTitle>
               </div>
               <CardDescription>Customize the look and feel of the VeriSync platform.</CardDescription>
@@ -80,24 +80,24 @@ export default function StudentSettings() {
                 <div className="grid grid-cols-3 gap-3">
                   <button 
                     onClick={() => handleThemeChange('light')}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${localTheme === 'light' ? 'border-violet-500 bg-violet-500/5' : 'border-border bg-card hover:border-violet-500/30'}`}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${localTheme === 'light' ? 'border-student-500 bg-student-500/5' : 'border-border bg-card hover:border-student-500/30'}`}
                   >
-                    <Sun className={`w-6 h-6 ${localTheme === 'light' ? 'text-violet-500' : 'text-muted-foreground'}`} />
-                    <span className={`text-xs font-bold ${localTheme === 'light' ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'}`}>Light</span>
+                    <Sun className={`w-6 h-6 ${localTheme === 'light' ? 'text-student-500' : 'text-muted-foreground'}`} />
+                    <span className={`text-xs font-bold ${localTheme === 'light' ? 'text-student-600 dark:text-student-400' : 'text-muted-foreground'}`}>Light</span>
                   </button>
                   <button 
                     onClick={() => handleThemeChange('dark')}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${localTheme === 'dark' ? 'border-violet-500 bg-violet-500/5' : 'border-border bg-card hover:border-violet-500/30'}`}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${localTheme === 'dark' ? 'border-student-500 bg-student-500/5' : 'border-border bg-card hover:border-student-500/30'}`}
                   >
-                    <Moon className={`w-6 h-6 ${localTheme === 'dark' ? 'text-violet-500' : 'text-muted-foreground'}`} />
-                    <span className={`text-xs font-bold ${localTheme === 'dark' ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'}`}>Dark</span>
+                    <Moon className={`w-6 h-6 ${localTheme === 'dark' ? 'text-student-500' : 'text-muted-foreground'}`} />
+                    <span className={`text-xs font-bold ${localTheme === 'dark' ? 'text-student-600 dark:text-student-400' : 'text-muted-foreground'}`}>Dark</span>
                   </button>
                   <button 
                     onClick={() => handleThemeChange('system')}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${localTheme === 'system' ? 'border-violet-500 bg-violet-500/5' : 'border-border bg-card hover:border-violet-500/30'}`}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${localTheme === 'system' ? 'border-student-500 bg-student-500/5' : 'border-border bg-card hover:border-student-500/30'}`}
                   >
-                    <Monitor className={`w-6 h-6 ${localTheme === 'system' ? 'text-violet-500' : 'text-muted-foreground'}`} />
-                    <span className={`text-xs font-bold ${localTheme === 'system' ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'}`}>System</span>
+                    <Monitor className={`w-6 h-6 ${localTheme === 'system' ? 'text-student-500' : 'text-muted-foreground'}`} />
+                    <span className={`text-xs font-bold ${localTheme === 'system' ? 'text-student-600 dark:text-student-400' : 'text-muted-foreground'}`}>System</span>
                   </button>
                 </div>
               </div>
@@ -124,7 +124,7 @@ export default function StudentSettings() {
           <Card className="border border-border shadow-sm rounded-2xl bg-card">
             <CardHeader className="bg-muted/20 border-b border-border/50 pb-4">
               <div className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-fuchsia-500" />
+                <Bell className="w-5 h-5 text-student-500" />
                 <CardTitle className="text-lg">Notifications</CardTitle>
               </div>
               <CardDescription>Control how and when you are alerted about academic updates.</CardDescription>
@@ -134,8 +134,8 @@ export default function StudentSettings() {
                 
                 <div className="p-6 flex items-center justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="p-2 bg-blue-500/10 rounded-lg shrink-0">
-                      <Mail className="w-4 h-4 text-blue-600" />
+                    <div className="p-2 bg-student-500/10 rounded-lg shrink-0">
+                      <Mail className="w-4 h-4 text-student-600" />
                     </div>
                     <div>
                       <Label className="text-sm font-bold block mb-1">Email Alerts</Label>

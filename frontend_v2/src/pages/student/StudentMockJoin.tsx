@@ -64,7 +64,7 @@ export default function StudentMockJoin() {
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
         
         {/* Top gradient bar */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500" />
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-student-500 to-indigo-500" />
         
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white mb-2">Student Simulator</h1>
@@ -96,7 +96,7 @@ export default function StudentMockJoin() {
               <input 
                 value={sessionId}
                 onChange={e => setSessionId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-student-500/50 outline-none transition-all"
                 placeholder="Enter Session ID"
                 required
               />
@@ -107,7 +107,7 @@ export default function StudentMockJoin() {
               <select 
                 value={studentId}
                 onChange={e => setStudentId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all appearance-none"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-student-500/50 outline-none transition-all appearance-none"
                 required
               >
                 <option value="">Select a student...</option>
@@ -122,7 +122,7 @@ export default function StudentMockJoin() {
               <input 
                 value={otp}
                 onChange={e => setOtp(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-student-500/50 outline-none transition-all"
                 placeholder="6-digit OTP"
                 maxLength={6}
               />
@@ -133,7 +133,7 @@ export default function StudentMockJoin() {
               <input 
                 value={token}
                 onChange={e => setToken(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-student-500/50 outline-none transition-all"
                 placeholder="Token string"
               />
             </div>
@@ -141,7 +141,7 @@ export default function StudentMockJoin() {
             <Button 
               type="submit" 
               disabled={status === 'LOADING'}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-lg font-bold transition-all shadow-lg shadow-blue-900/20"
+              className="w-full bg-student-600 hover:bg-student-700 text-white h-12 rounded-xl text-lg font-bold transition-all shadow-lg shadow-student-900/20"
             >
               {status === 'LOADING' ? <Loader2 className="animate-spin" /> : 'Simulate Attendance'}
             </Button>

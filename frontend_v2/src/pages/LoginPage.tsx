@@ -59,10 +59,13 @@ export default function LoginPage() {
       // Update global store with real name from backend
       const userRole = data.role.toLowerCase() as 'admin' | 'teacher' | 'student';
       setUser({
-        id: 'auth-user',
+        id: data.id || 'auth-user',
         role: userRole,
         name: data.name || email,
         email: data.email || email,
+        avatar: data.avatar,
+        studentId: data.studentId,
+        rollNumber: data.rollNumber,
       });
 
       // Navigate to the originally requested page, or the role dashboard

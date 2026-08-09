@@ -21,6 +21,7 @@ interface AppState {
     email?: string;
     studentId?: string;
     rollNumber?: string;
+    avatar?: string;
   } | null;
   setUser: (user: AppState['user']) => void;
   logout: () => Promise<void>;

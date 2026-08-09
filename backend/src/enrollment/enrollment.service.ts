@@ -137,6 +137,23 @@ export class EnrollmentService {
     const passwordHash = await bcrypt.hash(personalInfo.password, 10);
     const studentId = `STD${new Date().getFullYear()}${Math.floor(1000 + Math.random() * 9000)}`;
 
+    // Enforce Universal "2year - III sem" assignment
+    const sem3Sections = await this.prisma.section.findMany({
+      where: { semester: { semesterNumber: 3 } },
+      include: { semester: true }
+    });
+
+    if (sem3Sections.length === 0) {
+      throw new HttpException('Configuration Error: Semester 3 section not found.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    if (sem3Sections.length > 1) {
+      throw new HttpException('Ambiguity Error: Multiple Semester 3 sections found.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const targetSection = sem3Sections[0];
+    const actualBatchId = targetSection.semester.batchId;
+    const actualSectionId = targetSection.id;
+
     try {
       const result = await this.prisma.$transaction(async (prisma) => {
         const user = await prisma.user.create({
@@ -155,8 +172,8 @@ export class EnrollmentService {
             registrationNumber: personalInfo.universityRegistrationNumber,
             name: personalInfo.fullName,
             status: 'ACTIVE',
-            batchId: academicInfo.batchId,
-            sectionId: academicInfo.sectionId,
+            batchId: actualBatchId,
+            sectionId: actualSectionId,
             profile: {
               create: {
                 dob: personalInfo.dob ? new Date(personalInfo.dob) : null,
