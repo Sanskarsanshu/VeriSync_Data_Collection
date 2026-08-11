@@ -136,50 +136,26 @@ export class EnrollmentService {
     
     const passwordHash = await bcrypt.hash(personalInfo.password, 10);
 
-    // Enforce Universal "2year - III sem" assignment.
-    // Resolve the canonical ACTIVE Semester 3 Section A tied to an ACTIVE
-    // AcademicSession that actually has Course rows. Fail safely if none or
-    // multiple canonical sections are found - never guess.
-    const sem3Sections = await this.prisma.section.findMany({
-      where: {
-        name: 'Section A',
-        status: 'ACTIVE',
-        semester: {
-          semesterNumber: 3,
-          status: 'ACTIVE',
-          batch: {
-            status: 'ACTIVE',
-            session: { status: 'ACTIVE' },
-          },
-        },
-      },
-      include: { semester: true },
+    const actualBatchId = academicInfo.batchId;
+    const actualSectionId = academicInfo.sectionId;
+
+    if (!actualBatchId || !actualSectionId) {
+      throw new HttpException('Batch and Section selection are required', HttpStatus.BAD_REQUEST);
+    }
+
+    // Verify the section is valid and ACTIVE
+    const targetSection = await this.prisma.section.findUnique({
+      where: { id: actualSectionId },
+      include: { semester: { include: { batch: true } } },
     });
 
-    if (sem3Sections.length === 0) {
-      throw new HttpException('Configuration Error: No ACTIVE Semester 3 Section A found.', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (!targetSection || targetSection.status !== 'ACTIVE') {
+      throw new HttpException('Selected section is invalid or inactive', HttpStatus.BAD_REQUEST);
     }
 
-    const candidates: { section: (typeof sem3Sections)[number]; courseCount: number }[] = [];
-    for (const section of sem3Sections) {
-      const courseCount = await this.prisma.course.count({
-        where: { sectionId: section.id },
-      });
-      if (courseCount > 0) {
-        candidates.push({ section, courseCount });
-      }
+    if (targetSection.semester.batchId !== actualBatchId) {
+      throw new HttpException('Mismatch between selected batch and section', HttpStatus.BAD_REQUEST);
     }
-
-    if (candidates.length === 0) {
-      throw new HttpException('Configuration Error: No canonical Semester 3 section with courses found.', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    if (candidates.length > 1) {
-      throw new HttpException('Configuration Error: Multiple canonical Semester 3 sections with courses found.', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    const targetSection = candidates[0].section;
-    const actualBatchId = targetSection.semester.batchId;
-    const actualSectionId = targetSection.id;
 
     try {
       const result = await this.prisma.$transaction(async (prisma) => {

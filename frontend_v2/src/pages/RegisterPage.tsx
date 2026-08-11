@@ -56,7 +56,7 @@ export default function RegisterPage() {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || '/api';
-  const [metadata, setMetadata] = useState<{ batches: any[], sections: any[] }>({ batches: [], sections: [] });
+  const [metadata, setMetadata] = useState<{ batches: any[], sections: any[], semesters?: any[] }>({ batches: [], sections: [] });
 
   useEffect(() => {
     fetch(`${API_URL}/enrollment/metadata`)
@@ -455,12 +455,18 @@ export default function RegisterPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm">Section Assignment <span className="text-destructive">*</span></Label>
-                    <select className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors" value={academicInfo.sectionId} onChange={e => setAcademicInfo({...academicInfo, sectionId: e.target.value})}>
+                    <select className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors" value={academicInfo.sectionId} onChange={e => setAcademicInfo({...academicInfo, sectionId: e.target.value})} disabled={!academicInfo.batchId}>
                       <option value="" disabled>Select Section</option>
                       {metadata.sections && metadata.sections.length > 0 ? (
-                        metadata.sections.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))
+                        metadata.sections
+                          .filter(s => {
+                            if (!academicInfo.batchId) return false;
+                            const sem = metadata.semesters?.find((sem: any) => sem.id === s.semesterId);
+                            return sem?.batchId === academicInfo.batchId;
+                          })
+                          .map(s => (
+                            <option key={s.id} value={s.id}>{s.name} (Semester {(metadata.semesters?.find((sem: any) => sem.id === s.semesterId) as any)?.semesterNumber})</option>
+                          ))
                       ) : (
                         <option value="fake-section-id">A (Fallback)</option>
                       )}
