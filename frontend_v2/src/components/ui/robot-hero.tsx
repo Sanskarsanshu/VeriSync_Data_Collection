@@ -849,19 +849,15 @@ export function RobotHero({
   return (
     <section
       ref={containerRef}
-      className="relative w-full h-[400px] sm:h-[500px] min-h-[400px] overflow-hidden rounded-3xl"
-      style={{
-        background: `linear-gradient(to bottom, ${entorno.fondoArriba} 0%, ${entorno.fondoArriba} 55%, ${entorno.fondoMedio} 65%, ${entorno.fondoAbajo} 100%)`,
-      }}
+      className="relative w-full h-[400px] sm:h-[500px] min-h-[400px] overflow-hidden rounded-3xl bg-gradient-to-b from-[#cecbcb] via-[#9a9a9a] to-[#bebebe] dark:from-zinc-800 dark:via-zinc-950 dark:to-zinc-900"
     >
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden"
         style={{ zIndex: 0 }}
       >
         <h1
-          className="font-sans font-black select-none whitespace-nowrap"
+          className="font-sans font-black select-none whitespace-nowrap text-black dark:text-white"
           style={{
-            color: "#000000",
             opacity: 0.13,
             letterSpacing: "-0.05em",
             fontSize: "clamp(4rem, 15vw, 14rem)",
