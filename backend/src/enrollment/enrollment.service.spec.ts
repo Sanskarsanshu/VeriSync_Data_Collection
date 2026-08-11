@@ -30,7 +30,7 @@ const validBody = {
     fullName: 'Test Name',
     rollNumber: '123',
   },
-  academicInfo: { admissionYear: '2025', expectedGraduationYear: '2027', batchId: 'batch-id', sectionId: 'section-id' },
+  academicInfo: { admissionYear: '2025', expectedGraduationYear: '2027' },
   faceEmbedding: [],
 };
 
@@ -57,54 +57,89 @@ describe('EnrollmentService', () => {
     );
   });
 
-  it('should assign new student to the provided batch and section', async () => {
-    mockPrisma.section.findUnique = jest.fn().mockResolvedValue({
-      id: 'section-id',
-      status: 'ACTIVE',
-      semester: { batchId: 'batch-id' }
-    });
+  it('should assign new student to the canonical Semester 3 section and ignore frontend sectionId', async () => {
+    mockPrisma.section.findMany.mockResolvedValue([
+      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+    ]);
+    mockPrisma.course.count.mockResolvedValue(5);
 
     const result = await service.submitEnrollment(validBody);
 
     expect(result.success).toBe(true);
     expect(result.studentId).toBe(ACTUAL_STUDENT_ID);
-    expect(mockPrisma.section.findUnique).toHaveBeenCalledWith({
-      where: { id: 'section-id' },
-      include: { semester: { include: { batch: true } } },
+    expect(mockPrisma.section.findMany).toHaveBeenCalledWith({
+      where: {
+        name: 'Section A',
+        status: 'ACTIVE',
+        semester: {
+          semesterNumber: 3,
+          status: 'ACTIVE',
+          batch: { status: 'ACTIVE', session: { status: 'ACTIVE' } },
+        },
+      },
+      include: { semester: true },
     });
   });
 
-  it('should fail safely when no batchId or sectionId is provided', async () => {
-    const invalidBody = { ...validBody, academicInfo: { admissionYear: '2025', expectedGraduationYear: '2027' } };
-    await expect(service.submitEnrollment(invalidBody)).rejects.toThrow(HttpException);
+  it('should return the actual persisted Student id, not a synthetic value', async () => {
+    mockPrisma.section.findMany.mockResolvedValue([
+      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+    ]);
+    mockPrisma.course.count.mockResolvedValue(5);
+
+    const result = await service.submitEnrollment(validBody);
+
+    // The response id must be exactly the id of the Student record created inside the transaction.
+    expect(result.studentId).toBe(ACTUAL_STUDENT_ID);
+    expect(result.studentId).not.toMatch(/^STD/);
   });
 
-  it('should fail safely when the selected section does not exist or is inactive', async () => {
-    mockPrisma.section.findUnique = jest.fn().mockResolvedValue({
-      id: 'section-id',
-      status: 'INACTIVE',
-      semester: { batchId: 'batch-id' }
-    });
+  it('should resolve the single section that has courses when multiple ACTIVE Sem-3 sections exist', async () => {
+    mockPrisma.section.findMany.mockResolvedValue([
+      { id: 'empty-section', semester: { batchId: 'batch1', semesterNumber: 3 } },
+      { id: 'canonical-section', semester: { batchId: 'batch2', semesterNumber: 3 } },
+    ]);
+    mockPrisma.course.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(6);
+
+    const result = await service.submitEnrollment(validBody);
+
+    expect(result.success).toBe(true);
+    expect(mockPrisma.course.count).toHaveBeenCalledWith({ where: { sectionId: 'empty-section' } });
+    expect(mockPrisma.course.count).toHaveBeenCalledWith({ where: { sectionId: 'canonical-section' } });
+  });
+
+  it('should fail safely when no ACTIVE Semester 3 Section A exists', async () => {
+    mockPrisma.section.findMany.mockResolvedValue([]);
 
     await expect(service.submitEnrollment(validBody)).rejects.toThrow(HttpException);
   });
 
-  it('should fail safely when the selected batch does not match the section', async () => {
-    mockPrisma.section.findUnique = jest.fn().mockResolvedValue({
-      id: 'section-id',
-      status: 'ACTIVE',
-      semester: { batchId: 'different-batch-id' }
-    });
+  it('should fail safely when no canonical section has courses', async () => {
+    mockPrisma.section.findMany.mockResolvedValue([
+      { id: 'section1', semester: { batchId: 'batch1', semesterNumber: 3 } },
+    ]);
+    mockPrisma.course.count.mockResolvedValue(0);
+
+    await expect(service.submitEnrollment(validBody)).rejects.toThrow(HttpException);
+  });
+
+  it('should fail safely when multiple canonical sections have courses', async () => {
+    mockPrisma.section.findMany.mockResolvedValue([
+      { id: 'section1', semester: { batchId: 'batch1', semesterNumber: 3 } },
+      { id: 'section2', semester: { batchId: 'batch2', semesterNumber: 3 } },
+    ]);
+    mockPrisma.course.count.mockResolvedValue(3);
 
     await expect(service.submitEnrollment(validBody)).rejects.toThrow(HttpException);
   });
 
   it('should write an ENROLLMENT_CREATED audit log inside the transaction', async () => {
-    mockPrisma.section.findUnique = jest.fn().mockResolvedValue({
-      id: 'section-id',
-      status: 'ACTIVE',
-      semester: { batchId: 'batch-id' }
-    });
+    mockPrisma.section.findMany.mockResolvedValue([
+      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+    ]);
+    mockPrisma.course.count.mockResolvedValue(5);
 
     await service.submitEnrollment(validBody);
 
@@ -115,9 +150,8 @@ describe('EnrollmentService', () => {
         studentId: ACTUAL_STUDENT_ID,
         metadata: expect.objectContaining({
           email: 'test@test.com',
-          fullName: 'Test Name',
           rollNumber: '123',
-          sectionId: 'section-id',
+          sectionId: 'canonical-section',
           batchId: 'batch-id',
           viaToken: false,
         }),
@@ -126,11 +160,10 @@ describe('EnrollmentService', () => {
   });
 
   it('should return 409 Conflict on a duplicate unique constraint (P2002)', async () => {
-    mockPrisma.section.findUnique = jest.fn().mockResolvedValue({
-      id: 'section-id',
-      status: 'ACTIVE',
-      semester: { batchId: 'batch-id' }
-    });
+    mockPrisma.section.findMany.mockResolvedValue([
+      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+    ]);
+    mockPrisma.course.count.mockResolvedValue(5);
     mockPrisma.$transaction.mockRejectedValue({ code: 'P2002' });
 
     await expect(service.submitEnrollment(validBody)).rejects.toMatchObject({
@@ -139,11 +172,10 @@ describe('EnrollmentService', () => {
   });
 
   it('should return 500 Internal Server Error on unexpected failures', async () => {
-    mockPrisma.section.findUnique = jest.fn().mockResolvedValue({
-      id: 'section-id',
-      status: 'ACTIVE',
-      semester: { batchId: 'batch-id' }
-    });
+    mockPrisma.section.findMany.mockResolvedValue([
+      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+    ]);
+    mockPrisma.course.count.mockResolvedValue(5);
     mockPrisma.$transaction.mockRejectedValue(new Error('boom'));
 
     await expect(service.submitEnrollment(validBody)).rejects.toMatchObject({
