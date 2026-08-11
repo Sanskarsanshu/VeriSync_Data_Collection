@@ -120,8 +120,8 @@ export default function RegisterPage() {
       }
     }
     if (step === 2) {
-      if (!academicInfo.batchId || !academicInfo.sectionId) {
-        setError('Please select a valid Batch and Section.');
+      if (!academicInfo.admissionYear || !academicInfo.expectedGraduationYear) {
+        setError('Please provide Admission Year and Expected Graduation Year.');
         return;
       }
     }
@@ -441,30 +441,12 @@ export default function RegisterPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <Label className="text-sm">Enrolled Batch <span className="text-destructive">*</span></Label>
-                    <select className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors" value={academicInfo.batchId} onChange={e => setAcademicInfo({...academicInfo, batchId: e.target.value})}>
-                      <option value="" disabled>Select Batch</option>
-                      {metadata.batches && metadata.batches.length > 0 ? (
-                        metadata.batches.map(b => (
-                          <option key={b.id} value={b.id}>{b.name}</option>
-                        ))
-                      ) : (
-                        <option value="fake-batch-id">1st year(i sem) (Fallback)</option>
-                      )}
-                    </select>
+                    <Label className="text-sm">Enrolled Batch</Label>
+                    <Input className="h-11 bg-background/50 border border-border/50 text-muted-foreground" value="2025 - 2027 Cohort" readOnly disabled />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm">Section Assignment <span className="text-destructive">*</span></Label>
-                    <select className="flex h-11 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm focus:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors" value={academicInfo.sectionId} onChange={e => setAcademicInfo({...academicInfo, sectionId: e.target.value})}>
-                      <option value="" disabled>Select Section</option>
-                      {metadata.sections && metadata.sections.length > 0 ? (
-                        metadata.sections.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))
-                      ) : (
-                        <option value="fake-section-id">A (Fallback)</option>
-                      )}
-                    </select>
+                    <Label className="text-sm">Academic Placement</Label>
+                    <Input className="h-11 bg-background/50 border border-border/50 text-muted-foreground" value="2nd Year (Semester 3) - Section A" readOnly disabled />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm">Admission Year</Label>
