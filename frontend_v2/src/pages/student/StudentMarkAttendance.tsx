@@ -28,8 +28,10 @@ export default function StudentMarkAttendance() {
   const fetchActiveSession = async () => {
     try {
       setLoading(true);
+      const token = sessionStorage.getItem('verisync_token');
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${API_URL}/students/me/active-session`, {
+        headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch active session');
@@ -52,9 +54,11 @@ export default function StudentMarkAttendance() {
     // Simulate camera/scanning UI delay
     setTimeout(async () => {
       try {
+        const token = sessionStorage.getItem('verisync_token');
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
         const response = await fetch(`${API_URL}/students/me/mark-attendance/${activeSession.sessionId}`, {
           method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
           credentials: 'include'
         });
         

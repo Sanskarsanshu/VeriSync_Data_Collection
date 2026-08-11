@@ -38,11 +38,13 @@ export default function StudentProfile() {
     if (!newPhotoUrl.trim()) return;
     setUploading(true);
     try {
+      const token = sessionStorage.getItem('verisync_token');
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${API_URL}/students/me/profile/photo`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include',
         body: JSON.stringify({ photoUrl: newPhotoUrl.trim() })
@@ -72,8 +74,10 @@ export default function StudentProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        const token = sessionStorage.getItem('verisync_token');
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
         const response = await fetch(`${API_URL}/students/me/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` },
           credentials: 'include'
         });
         

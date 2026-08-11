@@ -26,8 +26,10 @@ export default function StudentAttendanceHistory() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
+        const token = sessionStorage.getItem('verisync_token');
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
         const response = await fetch(`${API_URL}/students/me/attendance`, {
+          headers: { 'Authorization': `Bearer ${token}` },
           credentials: 'include'
         });
         
