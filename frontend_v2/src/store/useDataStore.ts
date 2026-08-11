@@ -118,7 +118,8 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   }
   headers.set('Content-Type', 'application/json');
 
-  const res = await fetch(`http://localhost:3001${endpoint}`, {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers
   });

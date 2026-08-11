@@ -11,10 +11,10 @@ export class FaceVerificationService {
    * Abstracted method to find the best match for a given facial embedding.
    * Can be swapped out for pgvector or an ANN index in the future.
    */
-  async findBestMatch(embedding: number[]) {
-    // 1. Fetch all students who have face embeddings
+  async findBestMatch(embedding: number[], sectionId?: string) {
+    // 1. Fetch all students who have face embeddings (optionally section-scoped)
     const students = await this.prisma.student.findMany({
-      where: { status: 'ACTIVE' },
+      where: { status: 'ACTIVE', ...(sectionId ? { sectionId } : {}) },
       include: { faceEmbedding: true },
     });
 

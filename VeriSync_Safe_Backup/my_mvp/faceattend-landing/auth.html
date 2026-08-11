@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#060816" />
+  <title>Sign in | VeriSync</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="auth-page" data-page="auth">
+  <div class="auth-layout">
+    <aside class="auth-visual">
+      <a class="brand auth-brand" href="index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 48 48"><path d="M24 4 8 10v12c0 10.8 6.8 18.6 16 22 9.2-3.4 16-11.2 16-22V10L24 4Z" fill="currentColor" opacity=".16"/><path d="M24 7.2 11 12v10c0 8.7 5.1 15.2 13 18.6 7.9-3.4 13-9.9 13-18.6V12L24 7.2Z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M18.2 23.4 22 27l8-8.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Veri<span>Sync</span></span>
+      </a>
+
+      <div class="auth-visual-copy">
+        <span class="auth-role-pill" id="authRolePill">Student portal</span>
+        <h1 id="authVisualTitle">Your attendance,<br>always clear.</h1>
+        <p id="authVisualText">Access registered courses, verify attendance and review your personal analytics.</p>
+
+        <div class="auth-benefits" id="authBenefits">
+          <div><span>✓</span> Secure role-based access</div>
+          <div><span>✓</span> Verified attendance workflow</div>
+          <div><span>✓</span> Real-time attendance insights</div>
+        </div>
+      </div>
+
+      <div class="auth-orbit" aria-hidden="true">
+        <span class="auth-orbit-ring auth-orbit-ring--one"></span>
+        <span class="auth-orbit-ring auth-orbit-ring--two"></span>
+        <span class="auth-orbit-dot auth-orbit-dot--one"></span>
+        <span class="auth-orbit-dot auth-orbit-dot--two"></span>
+        <span class="auth-orbit-dot auth-orbit-dot--three"></span>
+        <div class="auth-orbit-core">
+          <svg id="authHeroIcon" viewBox="0 0 24 24"><path d="m2 10 10-5 10 5-10 5-10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5M22 10v6"/></svg>
+        </div>
+      </div>
+
+      <span class="auth-copyright">© <span id="year"></span> VeriSync</span>
+    </aside>
+
+    <main class="auth-content">
+      <div class="auth-topbar">
+        <a class="back-link" href="portal.html">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          Choose another portal
+        </a>
+      </div>
+
+      <section class="auth-panel">
+        <div class="auth-heading">
+          <span class="auth-mobile-icon" id="authMobileIcon">
+            <svg viewBox="0 0 24 24"><path d="m2 10 10-5 10 5-10 5-10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5M22 10v6"/></svg>
+          </span>
+          <div>
+            <h2 id="authHeading">Welcome back</h2>
+            <p id="authSubheading">Sign in to continue to the student portal.</p>
+          </div>
+        </div>
+
+        <div class="auth-tabs" id="authTabs" role="tablist">
+          <button class="auth-tab active" type="button" data-mode="login" role="tab">Login</button>
+          <button class="auth-tab" type="button" data-mode="register" role="tab">Register</button>
+        </div>
+
+        <form class="auth-form" id="loginForm" novalidate>
+          <label class="form-field">
+            <span>Email address</span>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 6l8 7 8-7"/></svg>
+              <input type="email" name="email" placeholder="name@college.edu" autocomplete="email" required />
+            </div>
+            <small class="field-error"></small>
+          </label>
+
+          <label class="form-field">
+            <span>Password</span>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24"><path d="M5 10h14v11H5zM8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              <input type="password" name="password" placeholder="Enter your password" autocomplete="current-password" minlength="6" required />
+              <button class="password-toggle" type="button" aria-label="Show password">
+                <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <small class="field-error"></small>
+          </label>
+
+          <div class="form-row">
+            <label class="checkbox-field">
+              <input type="checkbox" name="remember" />
+              <span></span>
+              Remember me
+            </label>
+            <a href="#" class="text-link form-link" id="forgotPassword">Forgot password?</a>
+          </div>
+
+          <button class="button button--primary button--full button--large" type="submit">
+            <span id="loginButtonText">Sign in to student portal</span>
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+
+          <p class="auth-switch-text" id="loginSwitchText">
+            New to VeriSync?
+            <button type="button" data-switch-mode="register">Create an account</button>
+          </p>
+        </form>
+
+        <form class="auth-form hidden" id="registerForm" novalidate>
+          <div id="studentFields" class="dynamic-fields">
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Full name</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                  <input type="text" name="fullName" placeholder="Enter full name" required />
+                </div>
+                <small class="field-error"></small>
+              </label>
+
+              <label class="form-field">
+                <span>Roll number</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8M8 12h5M8 16h3"/></svg>
+                  <input type="text" name="rollNumber" placeholder="e.g. MCA031" required />
+                </div>
+                <small class="field-error"></small>
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Email address</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 6l8 7 8-7"/></svg>
+                  <input type="email" name="studentEmail" placeholder="name@college.edu" required />
+                </div>
+                <small class="field-error"></small>
+              </label>
+
+              <label class="form-field">
+                <span>Phone number</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><path d="M6 2h4l2 5-3 2a15 15 0 0 0 6 6l2-3 5 2v4c0 2-2 4-4 4C9 21 3 15 2 6c0-2 2-4 4-4Z"/></svg>
+                  <input type="tel" name="phone" placeholder="+91 98765 43210" required />
+                </div>
+                <small class="field-error"></small>
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Department</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1"/></svg>
+                  <select name="department" required>
+                    <option value="">Select department</option>
+                    <option value="MCA">MCA</option>
+                  </select>
+                </div>
+                <small class="field-error"></small>
+              </label>
+
+              <label class="form-field">
+                <span>Course / programme</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v15H6a2 2 0 0 1-2-1.5Z"/></svg>
+                  <select name="course" required>
+                    <option value="">Select course</option>
+                    <option value="MCA">Master of Computer Applications</option>
+                  </select>
+                </div>
+                <small class="field-error"></small>
+              </label>
+            </div>
+
+            <div class="form-grid form-grid--three">
+              <label class="form-field">
+                <span>Semester</span>
+                <div class="input-shell">
+                  <select name="semester" required>
+                    <option value="">Select</option>
+                    <option>Semester 3</option>
+                    <option>Semester 4</option>
+                  </select>
+                </div>
+                <small class="field-error"></small>
+              </label>
+
+              <label class="form-field">
+                <span>Session</span>
+                <div class="input-shell">
+                  <select name="session" required>
+                    <option value="">Select</option>
+                    <option>2025–2027</option>
+                    <option>2026–2028</option>
+                  </select>
+                </div>
+                <small class="field-error"></small>
+              </label>
+
+              <label class="form-field">
+                <span>Section</span>
+                <div class="input-shell">
+                  <select name="section" required>
+                    <option value="">Select</option>
+                    <option>Section A</option>
+                  </select>
+                </div>
+                <small class="field-error"></small>
+              </label>
+            </div>
+          </div>
+
+          <div id="teacherFields" class="dynamic-fields hidden">
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Full name</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                  <input type="text" name="teacherName" placeholder="Enter full name" />
+                </div>
+                <small class="field-error"></small>
+              </label>
+
+              <label class="form-field">
+                <span>Faculty ID</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8M8 12h5M8 16h3"/></svg>
+                  <input type="text" name="facultyId" placeholder="Enter faculty ID" />
+                </div>
+                <small class="field-error"></small>
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Official email</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 6l8 7 8-7"/></svg>
+                  <input type="email" name="teacherEmail" placeholder="faculty@college.edu" />
+                </div>
+                <small class="field-error"></small>
+              </label>
+
+              <label class="form-field">
+                <span>Phone number</span>
+                <div class="input-shell">
+                  <svg viewBox="0 0 24 24"><path d="M6 2h4l2 5-3 2a15 15 0 0 0 6 6l2-3 5 2v4c0 2-2 4-4 4C9 21 3 15 2 6c0-2 2-4 4-4Z"/></svg>
+                  <input type="tel" name="teacherPhone" placeholder="+91 98765 43210" />
+                </div>
+                <small class="field-error"></small>
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Department</span>
+                <div class="input-shell">
+                  <select name="teacherDepartment">
+                    <option value="">Select department</option>
+                    <option value="MCA">MCA</option>
+                  </select>
+                </div>
+                <small class="field-error"></small>
+              </label>
+
+              <label class="form-field">
+                <span>Designation</span>
+                <div class="input-shell">
+                  <select name="designation">
+                    <option value="">Select designation</option>
+                    <option>Assistant Professor</option>
+                    <option>Associate Professor</option>
+                    <option>Professor</option>
+                    <option>Guest Faculty</option>
+                  </select>
+                </div>
+                <small class="field-error"></small>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label class="form-field">
+              <span>Password</span>
+              <div class="input-shell">
+                <svg viewBox="0 0 24 24"><path d="M5 10h14v11H5zM8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                <input type="password" name="registerPassword" placeholder="Minimum 8 characters" minlength="8" required />
+                <button class="password-toggle" type="button" aria-label="Show password">
+                  <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <small class="field-error"></small>
+            </label>
+
+            <label class="form-field">
+              <span>Confirm password</span>
+              <div class="input-shell">
+                <svg viewBox="0 0 24 24"><path d="M5 10h14v11H5zM8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                <input type="password" name="confirmPassword" placeholder="Re-enter password" minlength="8" required />
+                <button class="password-toggle" type="button" aria-label="Show password">
+                  <svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <small class="field-error"></small>
+            </label>
+          </div>
+
+          <label class="checkbox-field checkbox-field--terms">
+            <input type="checkbox" name="terms" required />
+            <span></span>
+            I confirm that the information is correct and agree to identity verification.
+          </label>
+
+          <button class="button button--primary button--full button--large" type="submit">
+            <span id="registerButtonText">Create student account</span>
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+
+          <p class="auth-switch-text">
+            Already registered?
+            <button type="button" data-switch-mode="login">Sign in</button>
+          </p>
+        </form>
+
+        <div class="auth-secure-note">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>Your connection is protected. Authentication must be connected to your backend before production use.</span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-icon">✓</span>
+    <div><strong id="toastTitle">Success</strong><small id="toastMessage">Form submitted.</small></div>
+    <button type="button" aria-label="Close notification">×</button>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script>
+    if (window.VeriSync) VeriSync.initDB();
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>

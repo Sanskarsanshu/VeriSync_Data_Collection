@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#060816" />
+  <title>Choose Your Portal | VeriSync</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="portal-page" data-page="portal">
+  <div class="site-glow site-glow--one" aria-hidden="true"></div>
+  <div class="site-glow site-glow--two" aria-hidden="true"></div>
+  <canvas id="particleCanvas" aria-hidden="true"></canvas>
+
+  <header class="portal-header">
+    <div class="container portal-nav">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 48 48"><path d="M24 4 8 10v12c0 10.8 6.8 18.6 16 22 9.2-3.4 16-11.2 16-22V10L24 4Z" fill="currentColor" opacity=".16"/><path d="M24 7.2 11 12v10c0 8.7 5.1 15.2 13 18.6 7.9-3.4 13-9.9 13-18.6V12L24 7.2Z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M18.2 23.4 22 27l8-8.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Face<span>Attend</span></span>
+      </a>
+      <a class="back-link" href="index.html">
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Back to website
+      </a>
+    </div>
+  </header>
+
+  <main class="portal-main">
+    <section class="container portal-intro reveal">
+      <div class="eyebrow"><span class="eyebrow-dot"></span> Secure role-based access</div>
+      <h1>Choose your <span>VeriSync portal</span></h1>
+      <p>Select your role to continue to the correct login or registration experience.</p>
+    </section>
+
+    <section class="container portal-grid" aria-label="Choose your role">
+      <article class="portal-card portal-card--student reveal" data-role-card="student" tabindex="0">
+        <div class="portal-card-top">
+          <span class="portal-role-number">01</span>
+          <span class="portal-icon">
+            <svg viewBox="0 0 24 24"><path d="m2 10 10-5 10 5-10 5-10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5M22 10v6"/></svg>
+          </span>
+        </div>
+        <span class="portal-status">For enrolled students</span>
+        <h2>Student Portal</h2>
+        <p>Mark attendance, complete face verification and view personal attendance analytics.</p>
+        <ul>
+          <li>Scan dynamic attendance QR</li>
+          <li>View daily, weekly and monthly records</li>
+          <li>Submit correction requests</li>
+        </ul>
+        <div class="portal-actions">
+          <a class="button button--primary" href="auth.html?role=student&mode=login">Student login</a>
+          <a class="button button--ghost" href="auth.html?role=student&mode=register">Register</a>
+        </div>
+      </article>
+
+      <article class="portal-card portal-card--teacher portal-card--featured reveal reveal-delay-1" data-role-card="teacher" tabindex="0">
+        <span class="recommended-badge">Most used</span>
+        <div class="portal-card-top">
+          <span class="portal-role-number">02</span>
+          <span class="portal-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v15H6a2 2 0 0 1-2-1.5Z"/><path d="M8 7h8M8 11h6M8 15h4"/></svg>
+          </span>
+        </div>
+        <span class="portal-status">For verified faculty</span>
+        <h2>Teacher Portal</h2>
+        <p>Create attendance sessions, monitor live participation and manage assigned courses.</p>
+        <ul>
+          <li>Activate admin-assigned courses</li>
+          <li>Generate secure QR sessions</li>
+          <li>Review sheets and reports</li>
+        </ul>
+        <div class="portal-actions">
+          <a class="button button--primary" href="auth.html?role=teacher&mode=login">Teacher login</a>
+          <a class="button button--ghost" href="auth.html?role=teacher&mode=register">Register</a>
+        </div>
+      </article>
+
+      <article class="portal-card portal-card--admin reveal reveal-delay-2" data-role-card="admin" tabindex="0">
+        <div class="portal-card-top">
+          <span class="portal-role-number">03</span>
+          <span class="portal-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9 12h6M12 9v6"/></svg>
+          </span>
+        </div>
+        <span class="portal-status">Restricted access</span>
+        <h2>Admin Portal</h2>
+        <p>Manage academic data, users, course assignments, security, holidays and reports.</p>
+        <ul>
+          <li>Control colleges, sessions and courses</li>
+          <li>Approve teachers and students</li>
+          <li>Monitor audit and attendance data</li>
+        </ul>
+        <div class="portal-actions portal-actions--single">
+          <a class="button button--primary" href="auth.html?role=admin&mode=login">Admin login</a>
+        </div>
+        <small class="admin-note">Admin accounts are created by an authorised super admin.</small>
+      </article>
+    </section>
+
+    <section class="container portal-help reveal">
+      <div>
+        <span class="help-icon">?</span>
+        <p><strong>Not sure which portal to choose?</strong><small>Use the role assigned to your verified college account.</small></p>
+      </div>
+      <a href="index.html#workflow">View platform workflow <span>→</span></a>
+    </section>
+  </main>
+
+  <footer class="portal-footer">
+    <span>© <span id="year"></span> VeriSync</span>
+    <span>Secure attendance access</span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

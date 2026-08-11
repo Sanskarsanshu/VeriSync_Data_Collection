@@ -1,0 +1,16 @@
+-- CreateEnum
+CREATE TYPE "AuditAction" AS ENUM ('SESSION_STARTED', 'SESSION_CLOSED', 'FACE_VERIFICATION_SUCCESS', 'FACE_VERIFICATION_FAILED', 'QR_VERIFICATION_SUCCESS', 'QR_VERIFICATION_FAILED', 'MANUAL_ATTENDANCE_CHANGED', 'ENROLLMENT_CREATED');
+
+-- CreateTable
+CREATE TABLE "AuditLog" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "action" "AuditAction" NOT NULL,
+    "sessionId" TEXT,
+    "studentId" TEXT,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "ipAddress" TEXT,
+    "metadata" JSONB,
+
+    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+);

@@ -27,7 +27,8 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch('http://localhost:3001/students/me/dashboard', {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${API_URL}/students/me/dashboard`, {
           credentials: 'include'
         });
         

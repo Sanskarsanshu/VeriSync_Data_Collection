@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { ConfigModule } from '@nestjs/config';
+import { RolesGuard } from './auth/roles.guard';
 import { CalendarModule } from './calendar/calendar.module';
 import { PrismaService } from './prisma.service';
 import { AuthModule } from './auth/auth.module';
@@ -30,6 +32,10 @@ import { TeacherPortalModule } from './teacher-portal/teacher-portal.module';
     TeacherPortalModule
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [
+    AppService,
+    PrismaService,
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule {}

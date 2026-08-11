@@ -1,8 +1,10 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CalendarEligibilityService } from './calendar-eligibility.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('calendar')
+@UseGuards(JwtAuthGuard)
 export class CalendarController {
   constructor(
     private readonly prisma: PrismaService,

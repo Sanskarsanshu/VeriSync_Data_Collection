@@ -1,4 +1,5 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma.service';
 import { FaceVerificationService } from './face-verification.service';
 import * as crypto from 'crypto';
@@ -7,34 +8,59 @@ import * as crypto from 'crypto';
 export class AttendanceService {
   constructor(
     private prisma: PrismaService,
-    private faceVerification: FaceVerificationService
+    private faceVerification: FaceVerificationService,
+    private jwtService: JwtService
   ) {}
 
-  private async logAudit(action: any, sessionId?: string, studentId?: string, teacherId?: string, metadata?: any) {
+  private async logAudit(action: any, sessionId?: string, studentId?: string, userId?: string, metadata?: any) {
     await this.prisma.auditLog.create({
       data: {
         action,
         sessionId,
         studentId,
-        userId: teacherId,
+        userId,
         metadata: metadata || {}
       }
     });
   }
 
-  async startSession(data: { courseId: string; verificationMethod: string; windowMinutes?: number; teacherId: string }) {
-    let validCourseId = data.courseId;
-    try {
-      const courseExists = await this.prisma.course.findUnique({ where: { id: validCourseId } });
-      if (!courseExists) throw new Error('Not found');
-    } catch {
-      const fallback = await this.prisma.course.findFirst();
-      if (fallback) validCourseId = fallback.id;
+  private async resolveTeacher(userId: string) {
+    const teacher = await this.prisma.teacher.findFirst({ where: { user: { id: userId } } });
+    if (!teacher) {
+      throw new HttpException('Teacher profile not found', HttpStatus.UNAUTHORIZED);
+    }
+    return teacher;
+  }
+
+  private async assertTeacherOwnsSession(userId: string, sessionId: string) {
+    const session = await this.prisma.attendanceSession.findUnique({
+      where: { id: sessionId },
+      include: { scheduledClass: { include: { course: true } } }
+    });
+    if (!session) {
+      throw new HttpException('Session not found', HttpStatus.NOT_FOUND);
+    }
+    const teacher = await this.resolveTeacher(userId);
+    if (session.scheduledClass.course.primaryTeacherId !== teacher.id) {
+      throw new HttpException('Forbidden: you are not the teacher of this course', HttpStatus.FORBIDDEN);
+    }
+    return session;
+  }
+
+  async startSession(data: { courseId: string; verificationMethod: string; windowMinutes?: number }, userId: string) {
+    const teacher = await this.resolveTeacher(userId);
+
+    const course = await this.prisma.course.findUnique({ where: { id: data.courseId } });
+    if (!course) {
+      throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+    }
+    if (course.primaryTeacherId !== teacher.id) {
+      throw new HttpException('Forbidden: you are not the teacher of this course', HttpStatus.FORBIDDEN);
     }
 
     const scheduledClass = await this.prisma.scheduledClass.create({
       data: {
-        courseId: validCourseId,
+        courseId: course.id,
         date: new Date(),
         startTime: new Date().toTimeString().substring(0, 5),
         endTime: new Date(Date.now() + (data.windowMinutes || 30) * 60000).toTimeString().substring(0, 5),
@@ -61,15 +87,15 @@ export class AttendanceService {
       }
     });
 
-    await this.logAudit('SESSION_STARTED', session.id, undefined, data.teacherId, { method: data.verificationMethod });
+    await this.logAudit('SESSION_STARTED', session.id, undefined, teacher.userId, { method: data.verificationMethod });
 
     return { success: true, sessionId: session.id, otp: currentOtp, qrToken: dynamicQrSecret };
   }
 
-  async closeSession(sessionId: string, teacherId: string) {
-    const session = await this.prisma.attendanceSession.findUnique({ where: { id: sessionId }});
-    if (!session || session.status === 'CLOSED') {
-      throw new HttpException('Session not found or already closed', HttpStatus.BAD_REQUEST);
+  async closeSession(sessionId: string, userId: string) {
+    const session = await this.assertTeacherOwnsSession(userId, sessionId);
+    if (session.status === 'CLOSED') {
+      throw new HttpException('Session already closed', HttpStatus.BAD_REQUEST);
     }
 
     await this.prisma.attendanceSession.update({
@@ -77,7 +103,7 @@ export class AttendanceService {
       data: { status: 'CLOSED', closedAt: new Date(), dynamicQrSecret: null, currentOtp: null }
     });
 
-    await this.logAudit('SESSION_CLOSED', sessionId, undefined, teacherId);
+    await this.logAudit('SESSION_CLOSED', sessionId, undefined, userId);
 
     return { success: true, message: 'Session closed successfully' };
   }
@@ -106,7 +132,10 @@ export class AttendanceService {
   }
 
   async markFaceAttendance(sessionId: string, data: { embedding: number[]; livenessEvidence: any }) {
-    const session = await this.prisma.attendanceSession.findUnique({ where: { id: sessionId }});
+    const session = await this.prisma.attendanceSession.findUnique({
+      where: { id: sessionId },
+      include: { scheduledClass: { include: { course: true } } }
+    });
     if (!session || session.status !== 'LIVE' || session.verificationMethod !== 'FACE') {
       throw new HttpException('Invalid or inactive face session', HttpStatus.BAD_REQUEST);
     }
@@ -114,8 +143,9 @@ export class AttendanceService {
     // 1. Validate Liveness Challenge
     await this.faceVerification.validateLiveness(data.livenessEvidence);
 
-    // 2. Perform Cosine Similarity Search
-    const matchResult = await this.faceVerification.findBestMatch(data.embedding);
+    // 2. Section-scoped Cosine Similarity Search (student must belong to the session's section)
+    const sectionId = session.scheduledClass.course.sectionId;
+    const matchResult = await this.faceVerification.findBestMatch(data.embedding, sectionId);
     if (!matchResult.matched || !matchResult.student) {
       await this.logAudit('FACE_VERIFICATION_FAILED', sessionId, undefined, undefined, { confidence: matchResult.confidence });
       throw new HttpException('Face verification failed. No match above threshold.', HttpStatus.UNAUTHORIZED);
@@ -150,26 +180,42 @@ export class AttendanceService {
   }
 
   async markQrAttendance(sessionId: string, data: { token: string; studentJwt: string }) {
-    const session = await this.prisma.attendanceSession.findUnique({ where: { id: sessionId }});
+    const session = await this.prisma.attendanceSession.findUnique({
+      where: { id: sessionId },
+      include: { scheduledClass: { include: { course: true } } }
+    });
     if (!session || session.status !== 'LIVE') {
       throw new HttpException('Session is not active', HttpStatus.BAD_REQUEST);
     }
 
     if (session.verificationMethod === 'DYNAMIC_QR') {
-      // Very strict JWT token validation binding
-      if (session.dynamicQrSecret !== data.token) {
+      // Strict QR token validation binding (signature + expiry)
+      if (session.dynamicQrSecret !== data.token || !this.isQrTokenValid(data.token, session.id)) {
         await this.logAudit('QR_VERIFICATION_FAILED', sessionId, undefined, undefined, { reason: 'Invalid or expired Dynamic Token' });
         throw new HttpException('Invalid or Expired QR Token', HttpStatus.UNAUTHORIZED);
       }
+    } else {
+      throw new HttpException('QR verification not available for this session method', HttpStatus.BAD_REQUEST);
     }
 
-    // Identify student from their authenticated JWT
-    // (In real implementation, studentJwt would be verified here. For now, assuming it passes the userId)
-    const studentUserId = data.studentJwt; // Placeholder for decoded student ID
-    
+    // Verify the student JWT server-side
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(data.studentJwt);
+    } catch {
+      throw new UnauthorizedException('Invalid student token');
+    }
+    const studentUserId = payload.sub;
+
     const student = await this.prisma.student.findUnique({ where: { userId: studentUserId }});
     if (!student) {
       throw new HttpException('Student profile not found', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Section-scoping: student must belong to the session's section
+    if (student.sectionId !== session.scheduledClass.course.sectionId) {
+      await this.logAudit('QR_VERIFICATION_FAILED', sessionId, student.id, undefined, { reason: 'Student not in session section' });
+      throw new HttpException('You are not enrolled in this course section', HttpStatus.FORBIDDEN);
     }
 
     const existing = await this.prisma.attendanceRecord.findUnique({
@@ -195,18 +241,21 @@ export class AttendanceService {
     return { success: true, message: 'Attendance marked successfully via QR' };
   }
 
-  async markManualAttendance(sessionId: string, data: { overrides: Record<string, boolean>; teacherId: string }) {
-    const session = await this.prisma.attendanceSession.findUnique({ where: { id: sessionId }});
-    if (!session || session.status !== 'LIVE') {
+  async markManualAttendance(sessionId: string, data: { overrides: Record<string, boolean> }, userId: string) {
+    const session = await this.assertTeacherOwnsSession(userId, sessionId);
+    if (session.status !== 'LIVE') {
       throw new HttpException('Session is not active', HttpStatus.BAD_REQUEST);
     }
 
-    const { overrides, teacherId } = data;
+    const { overrides } = data;
     
-    // Convert roll numbers to studentIds
+    // Convert roll numbers to studentIds, restricted to the session's section
     const rollNumbers = Object.keys(overrides);
     const students = await this.prisma.student.findMany({
-      where: { rollNumber: { in: rollNumbers } }
+      where: {
+        rollNumber: { in: rollNumbers },
+        sectionId: session.scheduledClass.course.sectionId
+      }
     });
 
     let markedCount = 0;
@@ -232,9 +281,18 @@ export class AttendanceService {
       }
     }
 
-    await this.logAudit('MANUAL_ATTENDANCE_CHANGED', sessionId, undefined, teacherId, { overrides });
+    await this.logAudit('MANUAL_ATTENDANCE_CHANGED', sessionId, undefined, userId, { overrides });
 
     return { success: true, message: `Bulk saved ${markedCount} manual overrides successfully.` };
+  }
+
+  private isQrTokenValid(token: string, sessionId: string): boolean {
+    try {
+      const parsed = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+      return parsed.sessionId === sessionId && typeof parsed.exp === 'number' && parsed.exp > Date.now();
+    } catch {
+      return false;
+    }
   }
 
   private generateQrToken(sessionId: string): string {
@@ -243,9 +301,9 @@ export class AttendanceService {
     return Buffer.from(JSON.stringify({ sessionId, nonce, exp })).toString('base64');
   }
 
-  async rotateQrToken(sessionId: string, teacherId: string) {
-    const session = await this.prisma.attendanceSession.findUnique({ where: { id: sessionId }});
-    if (!session || session.status !== 'LIVE' || session.verificationMethod !== 'DYNAMIC_QR') {
+  async rotateQrToken(sessionId: string, userId: string) {
+    const session = await this.assertTeacherOwnsSession(userId, sessionId);
+    if (session.status !== 'LIVE' || session.verificationMethod !== 'DYNAMIC_QR') {
       throw new HttpException('Invalid session for dynamic QR', HttpStatus.BAD_REQUEST);
     }
 
@@ -255,6 +313,8 @@ export class AttendanceService {
       where: { id: sessionId },
       data: { dynamicQrSecret: newToken }
     });
+
+    await this.logAudit('QR_TOKEN_ROTATED', sessionId, undefined, userId);
 
     return { success: true, token: newToken };
   }

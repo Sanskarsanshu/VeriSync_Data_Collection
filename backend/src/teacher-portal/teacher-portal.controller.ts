@@ -15,15 +15,18 @@ export class TeacherPortalController {
   }
 
   @Get('courses/:courseId/students')
-  getCourseStudents(@Param('courseId') courseId: string) {
-    return this.teacherPortalService.getCourseStudents(courseId);
+  getCourseStudents(@Req() req: Request, @Param('courseId') courseId: string) {
+    const user = (req as any).user;
+    return this.teacherPortalService.getCourseStudents(user.userId, courseId);
   }
 
   @Get('courses/:courseId/attendance-sheet')
   getAttendanceSheet(
+    @Req() req: Request,
     @Param('courseId') courseId: string,
     @Query('month') monthName: string
   ) {
-    return this.teacherPortalService.getAttendanceSheet(courseId, monthName);
+    const user = (req as any).user;
+    return this.teacherPortalService.getAttendanceSheet(user.userId, courseId, monthName);
   }
 }

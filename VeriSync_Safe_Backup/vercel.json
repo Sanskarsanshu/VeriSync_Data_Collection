@@ -1,0 +1,15 @@
+{
+  "buildCommand": "cd frontend_v2 && npm install && npm run build",
+  "outputDirectory": "frontend_v2/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(models/.*)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

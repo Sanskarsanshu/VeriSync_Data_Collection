@@ -1,16 +1,33 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class TeacherPortalService {
   constructor(private prisma: PrismaService) {}
 
-  async getDashboard(userId: string) {
+  private async resolveTeacher(userId: string) {
     const teacher = await this.prisma.teacher.findFirst({
       where: { user: { id: userId } }
     });
-
     if (!teacher) throw new NotFoundException('Teacher profile not found');
+    return teacher;
+  }
+
+  private async assertCourseOwnedByTeacher(userId: string, courseId: string) {
+    const teacher = await this.resolveTeacher(userId);
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: { section: true, subject: true }
+    });
+    if (!course) throw new NotFoundException('Course not found');
+    if (course.primaryTeacherId !== teacher.id) {
+      throw new ForbiddenException('You are not assigned to this course');
+    }
+    return { teacher, course };
+  }
+
+  async getDashboard(userId: string) {
+    const teacher = await this.resolveTeacher(userId);
 
     // Get assigned courses
     const courses = await this.prisma.course.findMany({
@@ -65,13 +82,8 @@ export class TeacherPortalService {
     };
   }
 
-  async getCourseStudents(courseId: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
-      include: { section: true }
-    });
-
-    if (!course) throw new NotFoundException('Course not found');
+  async getCourseStudents(userId: string, courseId: string) {
+    const { course } = await this.assertCourseOwnedByTeacher(userId, courseId);
 
     const students = await this.prisma.student.findMany({
       where: { sectionId: course.sectionId, status: 'ACTIVE' },
@@ -87,13 +99,8 @@ export class TeacherPortalService {
     }));
   }
 
-  async getAttendanceSheet(courseId: string, monthName: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
-      include: { section: true, subject: true }
-    });
-
-    if (!course) throw new NotFoundException('Course not found');
+  async getAttendanceSheet(userId: string, courseId: string, monthName: string) {
+    const { course } = await this.assertCourseOwnedByTeacher(userId, courseId);
 
     // Parse month (e.g. "August" to month index)
     const monthIndex = new Date(`${monthName} 1, 2026`).getMonth();

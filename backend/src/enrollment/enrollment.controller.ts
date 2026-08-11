@@ -1,15 +1,21 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
 import { EnrollmentService } from './enrollment.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('enrollment')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
   @Post('admin/generate-link')
   async generateLink(@Body() body: { targetRollNumber?: string; targetName?: string }) {
     return this.enrollmentService.generateLink(body.targetRollNumber, body.targetName);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
   @Get('admin/links')
   async getLinks() {
     return this.enrollmentService.getLinks();

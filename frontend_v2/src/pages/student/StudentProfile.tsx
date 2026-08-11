@@ -38,7 +38,8 @@ export default function StudentProfile() {
     if (!newPhotoUrl.trim()) return;
     setUploading(true);
     try {
-      const response = await fetch('http://localhost:3001/students/me/profile/photo', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/students/me/profile/photo`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +72,8 @@ export default function StudentProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('http://localhost:3001/students/me/profile', {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${API_URL}/students/me/profile`, {
           credentials: 'include'
         });
         

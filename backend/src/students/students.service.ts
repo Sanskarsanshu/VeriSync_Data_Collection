@@ -306,8 +306,16 @@ export class StudentsService {
     const student = await this.prisma.student.findUnique({ where: { userId } });
     if (!student) throw new Error('Student not found');
 
-    const session = await this.prisma.attendanceSession.findUnique({ where: { id: sessionId } });
+    const session = await this.prisma.attendanceSession.findUnique({
+      where: { id: sessionId },
+      include: { scheduledClass: { include: { course: true } } }
+    });
     if (!session || session.status !== 'LIVE') throw new Error('Session is not active');
+
+    // Section membership validation: student must belong to the session's course section
+    if (student.sectionId !== session.scheduledClass.course.sectionId) {
+      throw new Error('You are not enrolled in this course section');
+    }
 
     const existing = await this.prisma.attendanceRecord.findUnique({
       where: { sessionId_studentId: { sessionId, studentId: student.id } }

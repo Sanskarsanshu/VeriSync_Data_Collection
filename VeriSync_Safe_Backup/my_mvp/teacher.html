@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="VeriSync Teacher Portal">
+  <title>Teacher Portal | VeriSync</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="role-teacher">
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a class="brand" href="teacher.html">
+          <span class="brand-mark" id="brandMark"></span>
+          <span><span class="brand-name">VeriSync</span><span class="brand-subtitle">Teacher Portal</span></span>
+        </a>
+      </div>
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+      <div class="sidebar-footer">
+        <div class="profile-chip">
+          <span class="avatar" id="profileAvatar">FA</span>
+          <div style="min-width:0"><strong id="profileName">Teacher User</strong><span id="profileEmail">user@pwc.edu.in</span></div>
+          <button class="icon-button" id="logoutBtn" title="Sign out" style="margin-left:auto;width:34px;height:34px"></button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-menu" id="mobileMenuBtn" aria-label="Open menu"></button>
+          <div class="page-context"><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">VeriSync Teacher Portal</p></div>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" data-theme-toggle title="Toggle theme"></button>
+          <button class="icon-button" id="notificationBtn" title="Notifications"></button>
+          <div class="profile-chip" style="padding:5px 8px;background:transparent">
+            <span class="avatar sm" id="topAvatar">FA</span>
+            <div class="topbar-name"><strong id="topName">Teacher</strong><span>Teacher Portal</span></div>
+          </div>
+        </div>
+      </header>
+
+      <section class="content" id="appContent"></section>
+    </main>
+  </div>
+
+  <script src="js/core.js"></script>
+  <script src="js/teacher.js"></script>
+  <script>
+    document.getElementById('brandMark').innerHTML = VeriSync.icons.logo;
+    document.getElementById('logoutBtn').innerHTML = VeriSync.icons.logout;
+    document.getElementById('mobileMenuBtn').innerHTML = VeriSync.icons.menu;
+    document.getElementById('notificationBtn').innerHTML = VeriSync.icons.bell;
+  </script>
+</body>
+</html>

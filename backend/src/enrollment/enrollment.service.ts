@@ -135,22 +135,49 @@ export class EnrollmentService {
     }
     
     const passwordHash = await bcrypt.hash(personalInfo.password, 10);
-    const studentId = `STD${new Date().getFullYear()}${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // Enforce Universal "2year - III sem" assignment
+    // Enforce Universal "2year - III sem" assignment.
+    // Resolve the canonical ACTIVE Semester 3 Section A tied to an ACTIVE
+    // AcademicSession that actually has Course rows. Fail safely if none or
+    // multiple canonical sections are found - never guess.
     const sem3Sections = await this.prisma.section.findMany({
-      where: { semester: { semesterNumber: 3 } },
-      include: { semester: true }
+      where: {
+        name: 'Section A',
+        status: 'ACTIVE',
+        semester: {
+          semesterNumber: 3,
+          status: 'ACTIVE',
+          batch: {
+            status: 'ACTIVE',
+            session: { status: 'ACTIVE' },
+          },
+        },
+      },
+      include: { semester: true },
     });
 
     if (sem3Sections.length === 0) {
-      throw new HttpException('Configuration Error: Semester 3 section not found.', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    if (sem3Sections.length > 1) {
-      throw new HttpException('Ambiguity Error: Multiple Semester 3 sections found.', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException('Configuration Error: No ACTIVE Semester 3 Section A found.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const targetSection = sem3Sections[0];
+    const candidates: { section: (typeof sem3Sections)[number]; courseCount: number }[] = [];
+    for (const section of sem3Sections) {
+      const courseCount = await this.prisma.course.count({
+        where: { sectionId: section.id },
+      });
+      if (courseCount > 0) {
+        candidates.push({ section, courseCount });
+      }
+    }
+
+    if (candidates.length === 0) {
+      throw new HttpException('Configuration Error: No canonical Semester 3 section with courses found.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    if (candidates.length > 1) {
+      throw new HttpException('Configuration Error: Multiple canonical Semester 3 sections with courses found.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const targetSection = candidates[0].section;
     const actualBatchId = targetSection.semester.batchId;
     const actualSectionId = targetSection.id;
 
@@ -201,19 +228,44 @@ export class EnrollmentService {
           });
         }
 
+        await prisma.auditLog.create({
+          data: {
+            action: 'ENROLLMENT_CREATED',
+            userId: user.id,
+            studentId: student.id,
+            metadata: {
+              email,
+              rollNumber,
+              fullName: personalInfo.fullName,
+              sectionId: actualSectionId,
+              batchId: actualBatchId,
+              viaToken: !!enrollmentToken,
+            },
+          },
+        });
+
         return { user, student };
       });
 
       return {
         success: true,
-        studentId: studentId,
+        studentId: result.student.id,
         name: personalInfo.fullName,
         rollNumber: personalInfo.rollNumber,
       };
-
     } catch (error) {
+      const prismaError = error as { code?: string };
+      if (prismaError?.code === 'P2002') {
+        throw new HttpException(
+          'Enrollment failed: Email, roll number, or registration number is already registered.',
+          HttpStatus.CONFLICT,
+        );
+      }
       console.error(error);
-      throw new HttpException('Enrollment failed. Ensure unique constraints are met.', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Enrollment failed. Ensure unique constraints are met.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

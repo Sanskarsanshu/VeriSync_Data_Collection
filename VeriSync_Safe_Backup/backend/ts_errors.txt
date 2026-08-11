@@ -1,0 +1,2 @@
+src/calendar/calendar.controller.ts(1,34): error TS2305: Module '"@nestjs/common"' has no exported member 'UseGuards'.
+src/timetable/timetable.controller.ts(1,34): error TS2305: Module '"@nestjs/common"' has no exported member 'UseGuards'.

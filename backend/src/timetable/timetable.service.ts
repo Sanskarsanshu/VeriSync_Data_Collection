@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CalendarEligibilityService } from '../calendar/calendar-eligibility.service';
 
@@ -9,7 +9,15 @@ export class TimetableService {
     private eligibilityService: CalendarEligibilityService
   ) {}
 
-  async getTeacherSchedule(teacherId: string, date: Date) {
+  async getTeacherSchedule(userId: string, date: Date) {
+    const teacher = await this.prisma.teacher.findFirst({
+      where: { user: { id: userId } }
+    });
+    if (!teacher) {
+      throw new NotFoundException('Teacher profile not found');
+    }
+    const teacherId = teacher.id;
+
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);

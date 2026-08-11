@@ -3,8 +3,10 @@ import { AttendanceController } from './attendance.controller';
 import { AttendanceService } from './attendance.service';
 import { FaceVerificationService } from './face-verification.service';
 import { PrismaService } from '../prisma.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
+  imports: [AuthModule],
   controllers: [AttendanceController],
   providers: [AttendanceService, FaceVerificationService, PrismaService],
 })

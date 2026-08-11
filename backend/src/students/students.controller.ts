@@ -1,6 +1,7 @@
 import { Controller, Get, Delete, Param, Post, Patch, Body, UseGuards, Req } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 import type { Request } from 'express';
 
 @Controller('students')
@@ -70,21 +71,29 @@ export class StudentsController {
     return this.studentsService.updateProfilePhoto(jwtUser.userId, body.photoUrl);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
   @Get()
   findAll() {
     return this.studentsService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
   @Post()
   create(@Body() data: any) {
     return this.studentsService.create(data);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
   @Patch(':id')
   update(@Param('id') id: string, @Body() data: any) {
     return this.studentsService.update(id, data);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.studentsService.remove(id);
