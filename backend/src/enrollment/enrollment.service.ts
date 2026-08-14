@@ -17,17 +17,17 @@ export class EnrollmentService {
         status: 'PENDING',
       },
     });
-    
+
     return {
       link: `/enroll/${token}`,
       tokenId: enrollmentToken.id,
-      status: enrollmentToken.status
+      status: enrollmentToken.status,
     };
   }
 
   async getLinks() {
     return this.prisma.enrollmentToken.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -39,9 +39,12 @@ export class EnrollmentService {
     if (!enrollmentToken) {
       throw new HttpException('Invalid token', HttpStatus.NOT_FOUND);
     }
-    
+
     if (enrollmentToken.status !== 'PENDING') {
-      throw new HttpException('Token is already used or expired', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Token is already used or expired',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     return enrollmentToken;
@@ -49,27 +52,30 @@ export class EnrollmentService {
 
   async getMetadata() {
     try {
-      const batches = await this.prisma.batch.findMany({ 
-        include: { 
-          session: { 
-            include: { 
-              programme: { 
-                include: { 
-                  department: { 
-                    include: { college: true } 
-                  } 
-                } 
-              } 
-            } 
-          } 
-        } 
+      const batches = await this.prisma.batch.findMany({
+        include: {
+          session: {
+            include: {
+              programme: {
+                include: {
+                  department: {
+                    include: { college: true },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
       const semesters = await this.prisma.semester.findMany();
       const sections = await this.prisma.section.findMany();
       return { batches, semesters, sections };
     } catch (e) {
-      console.error("Error fetching metadata:", e);
-      throw new HttpException('Failed to load academic metadata. Ensure database is initialized.', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error fetching metadata:', e);
+      throw new HttpException(
+        'Failed to load academic metadata. Ensure database is initialized.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -77,16 +83,17 @@ export class EnrollmentService {
   private otpStore = new Map<string, { otp: string; expires: number }>();
 
   async sendOtp(email: string) {
-    if (!email) throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
-    
+    if (!email)
+      throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
+
     // Generate a 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // Store it with a 5-minute expiry
     this.otpStore.set(email, { otp, expires: Date.now() + 5 * 60 * 1000 });
-    
+
     console.log(`[DEV OTP] Sent to ${email}: ${otp}`);
-    
+
     // In production, integrate with SendGrid/AWS SES here
     return { message: 'OTP sent successfully' };
   }
@@ -97,7 +104,10 @@ export class EnrollmentService {
 
     const record = this.otpStore.get(email);
     if (!record) {
-      throw new HttpException('No OTP requested or expired', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'No OTP requested or expired',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     if (Date.now() > record.expires) {
@@ -123,17 +133,20 @@ export class EnrollmentService {
       });
 
       if (!enrollmentToken || enrollmentToken.status !== 'PENDING') {
-        throw new HttpException('Invalid or expired token', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          'Invalid or expired token',
+          HttpStatus.BAD_REQUEST,
+        );
       }
     }
 
     const rollNumber = personalInfo.rollNumber;
     const email = personalInfo.email;
-    
+
     if (!personalInfo.password) {
       throw new HttpException('Password is required', HttpStatus.BAD_REQUEST);
     }
-    
+
     const passwordHash = await bcrypt.hash(personalInfo.password, 10);
 
     // Enforce Universal "2year - III sem" assignment.
@@ -157,10 +170,16 @@ export class EnrollmentService {
     });
 
     if (sem3Sections.length === 0) {
-      throw new HttpException('Configuration Error: No ACTIVE Semester 3 Section A found.', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Configuration Error: No ACTIVE Semester 3 Section A found.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
-    const candidates: { section: (typeof sem3Sections)[number]; courseCount: number }[] = [];
+    const candidates: {
+      section: (typeof sem3Sections)[number];
+      courseCount: number;
+    }[] = [];
     for (const section of sem3Sections) {
       const courseCount = await this.prisma.course.count({
         where: { sectionId: section.id },
@@ -171,10 +190,16 @@ export class EnrollmentService {
     }
 
     if (candidates.length === 0) {
-      throw new HttpException('Configuration Error: No canonical Semester 3 section with courses found.', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Configuration Error: No canonical Semester 3 section with courses found.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
     if (candidates.length > 1) {
-      throw new HttpException('Configuration Error: Multiple canonical Semester 3 sections with courses found.', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Configuration Error: Multiple canonical Semester 3 sections with courses found.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     const targetSection = candidates[0].section;
@@ -210,14 +235,16 @@ export class EnrollmentService {
                 bloodGroup: personalInfo.bloodGroup,
                 photoUrl: personalInfo.photoUrl,
                 admissionYear: parseInt(academicInfo.admissionYear),
-                expectedGraduationYear: parseInt(academicInfo.expectedGraduationYear),
-              }
+                expectedGraduationYear: parseInt(
+                  academicInfo.expectedGraduationYear,
+                ),
+              },
             },
             faceEmbedding: {
               create: {
-                embedding: faceEmbedding
-              }
-            }
+                embedding: faceEmbedding,
+              },
+            },
           },
         });
 

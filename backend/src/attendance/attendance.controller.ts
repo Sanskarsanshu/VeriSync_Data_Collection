@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, Param, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -13,7 +21,12 @@ export class AttendanceController {
   @Post('sessions')
   startSession(
     @Request() req: ExpressRequest,
-    @Body() data: { courseId: string; verificationMethod: string; windowMinutes?: number }
+    @Body()
+    data: {
+      courseId: string;
+      verificationMethod: string;
+      windowMinutes?: number;
+    },
   ) {
     const user = (req as any).user;
     return this.attendanceService.startSession(data, user.userId);
@@ -44,7 +57,7 @@ export class AttendanceController {
   @Post('sessions/:id/face-verify')
   markFaceAttendance(
     @Param('id') sessionId: string,
-    @Body() data: { embedding: number[]; livenessEvidence: any }
+    @Body() data: { embedding: number[]; livenessEvidence: any },
   ) {
     return this.attendanceService.markFaceAttendance(sessionId, data);
   }
@@ -54,7 +67,7 @@ export class AttendanceController {
   @Post('sessions/:id/qr-verify')
   markQrAttendance(
     @Param('id') sessionId: string,
-    @Body() data: { token: string; studentJwt: string }
+    @Body() data: { token: string; studentJwt: string },
   ) {
     return this.attendanceService.markQrAttendance(sessionId, data);
   }
@@ -65,16 +78,23 @@ export class AttendanceController {
   markManualAttendance(
     @Request() req: ExpressRequest,
     @Param('id') sessionId: string,
-    @Body() data: { overrides: Record<string, boolean> }
+    @Body() data: { overrides: Record<string, boolean> },
   ) {
     const user = (req as any).user;
-    return this.attendanceService.markManualAttendance(sessionId, data, user.userId);
+    return this.attendanceService.markManualAttendance(
+      sessionId,
+      data,
+      user.userId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Roles('TEACHER')
   @Post('sessions/:id/qr/rotate')
-  rotateQrToken(@Request() req: ExpressRequest, @Param('id') sessionId: string) {
+  rotateQrToken(
+    @Request() req: ExpressRequest,
+    @Param('id') sessionId: string,
+  ) {
     const user = (req as any).user;
     return this.attendanceService.rotateQrToken(sessionId, user.userId);
   }

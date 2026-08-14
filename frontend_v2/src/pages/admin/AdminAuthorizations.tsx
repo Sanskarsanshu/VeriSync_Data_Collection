@@ -1,21 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useDataStore } from '@/store/useDataStore';
 import { 
   Key, Shield, AlertTriangle, X, RefreshCw
 } from 'lucide-react';
 
-const initialAuthorizations = [
-  { id: 'AUTH1', teacher: 'Praveen Kumar', type: 'OVERRIDE_ATTENDANCE', status: 'GRANTED', expires: '2026-11-15' },
-  { id: 'AUTH2', teacher: 'Richa Verma', type: 'MODIFY_SYLLABUS', status: 'GRANTED', expires: '2026-11-15' },
-];
-
 export default function AdminAuthorizations() {
-  const { teachers, subjects, authorizations, addAuthorization } = useDataStore();
+  const { teachers, subjects, authorizations, addAuthorization, fetchTeachers, fetchSubjects } = useDataStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState('ZvqgDDMxAy');
-  
-  const [selectedTeacherId, setSelectedTeacherId] = useState(teachers[0]?.id || '');
+  const [generatedCode, setGeneratedCode] = useState('');
+
+  useEffect(() => {
+    fetchTeachers();
+    fetchSubjects();
+  }, [fetchTeachers, fetchSubjects]);
+
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedSemester, setSelectedSemester] = useState('4');
   const [selectedSubjectCode, setSelectedSubjectCode] = useState('');
   const [selectedSession, setSelectedSession] = useState('2025-2027');
@@ -47,6 +47,10 @@ export default function AdminAuthorizations() {
     e.preventDefault();
     const t = teachers.find(t => t.id === selectedTeacherId);
     if (!t || !selectedSubjectCode) return;
+    if (!generatedCode) {
+      alert('Generate an authorisation code first.');
+      return;
+    }
     
     addAuthorization({
       id: `AUTH_${Date.now()}`,
@@ -162,6 +166,7 @@ export default function AdminAuthorizations() {
                   value={selectedTeacherId}
                   onChange={e => setSelectedTeacherId(e.target.value)}
                 >
+                  {teachers.length === 0 && <option disabled value="">Loading teachers...</option>}
                   {teachers.map(t => (
                     <option key={t.id} value={t.id}>{t.name} · {t.id}</option>
                   ))}

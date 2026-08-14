@@ -3,6 +3,8 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { 
   UserPlus, Search, Link as LinkIcon, Trash2
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useDataStore } from '@/store/useDataStore';
 import { useAppStore } from '@/store/useAppStore';
@@ -228,6 +230,32 @@ export default function AdminAssignments() {
                           <h4 className="font-bold text-foreground">{teacher.name}</h4>
                           <p className="text-xs text-muted-foreground">{teacher.dept} - {teacher.designation}</p>
                         </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 pr-2">
+                        <Label 
+                          htmlFor={`status-${teacher.id}`} 
+                          className={`text-[10px] uppercase font-bold tracking-wider transition-colors ${
+                            teacher.status === 'ACTIVE' ? 'text-green-500' : 
+                            teacher.status === 'ON_LEAVE' ? 'text-yellow-500' : 
+                            'text-red-500'
+                          }`}
+                        >
+                          {teacher.status === 'ACTIVE' ? 'ACTIVE' : teacher.status === 'ON_LEAVE' ? 'ON LEAVE' : 'INACTIVE'}
+                        </Label>
+                        <Switch 
+                          id={`status-${teacher.id}`}
+                          checked={teacher.status === 'ACTIVE'}
+                          onCheckedChange={(checked) => {
+                            const newStatus = checked ? 'ACTIVE' : 'INACTIVE';
+                            updateTeacher(teacher.id, { status: newStatus });
+                            addNotification({ title: 'Status Updated', message: `${teacher.name} marked as ${newStatus}`, type: 'success' });
+                          }}
+                          className={
+                            teacher.status === 'ACTIVE' ? '!bg-green-500' :
+                            teacher.status === 'ON_LEAVE' ? '!bg-yellow-500' :
+                            '!bg-red-500'
+                          }
+                        />
                       </div>
                     </div>
                     

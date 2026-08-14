@@ -1,31 +1,28 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { 
-  FileSpreadsheet, Search, Download, Filter, User
+  FileSpreadsheet, Search, Download, Filter, User, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const MONTHS_LATEST_FIRST = ['December','November','October','September','August','July','June','May','April','March','February','January'];
-const SESSIONS = ["1st Year - I Sem", "2nd Year - III Sem"];
-const COURSES_BY_SESSION: Record<string, string[]> = {
-  "1st Year - I Sem": ["CC101", "CC102", "CC103", "CC104", "CC105", "SEC101"],
-  "2nd Year - III Sem": ["CC310", "CC311", "CC312", "CC313", "MDC302"]
-};
 
-const MOCK_STUDENTS = [
-  { roll: '26MCA001', name: 'Aarav Sharma' },
-  { roll: '26MCA002', name: 'Priya Singh' },
-  { roll: '26MCA003', name: 'Rohan Verma' },
-  { roll: '26MCA004', name: 'Neha Gupta' },
-  { roll: '26MCA005', name: 'Aditya Kumar' },
-  { roll: '26MCA006', name: 'Sneha Patel' },
-  { roll: '26MCA007', name: 'Vikram Singh' },
-  { roll: '26MCA008', name: 'Anjali Das' },
-  { roll: '26MCA009', name: 'Rahul Reddy' },
-  { roll: '26MCA010', name: 'Kavya Iyer' },
-  { roll: '26MCA011', name: 'Ishaan Mishra' },
-  { roll: '26MCA012', name: 'Meera Nair' },
-];
+interface Course {
+  id: string;
+  subjectName: string;
+  subjectCode: string;
+  sectionName: string;
+  semesterNumber: number;
+  teacherName: string;
+}
+
+interface StudentAttendance {
+  id: string;
+  roll: string;
+  name: string;
+  attendance: string[];
+}
 
 export default function AdminSheets() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,45 +31,76 @@ export default function AdminSheets() {
   const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
   const initialMonth = MONTHS_LATEST_FIRST.includes(currentMonthName) ? currentMonthName : 'August';
   
+  const token = sessionStorage.getItem('verisync_token');
+  
   const [filterMonth, setFilterMonth] = useState(initialMonth);
-  const [filterSession, setFilterSession] = useState(SESSIONS[1]);
-  const [filterCourse, setFilterCourse] = useState(COURSES_BY_SESSION[SESSIONS[1]][0]);
+  const [filterCourseId, setFilterCourseId] = useState('');
+  
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [studentsData, setStudentsData] = useState<StudentAttendance[]>([]);
+  const [daysInMonth, setDaysInMonth] = useState(31);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingSheet, setIsFetchingSheet] = useState(false);
 
-  // Calculate days in the selected month
-  const daysInMonth = useMemo(() => {
-    if (!filterMonth) return 31;
-    const monthIndex = new Date(Date.parse(filterMonth + " 1, 2026")).getMonth();
-    // Use 2026 as the base year for the academic calendar
-    return new Date(2026, monthIndex + 1, 0).getDate();
-  }, [filterMonth]);
+  // 1. Fetch available courses on mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/students/admin/courses`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCourses(data || []);
+          if (data?.length > 0) {
+            setFilterCourseId(data[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load admin courses:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (token) fetchCourses();
+  }, [token]);
+
+  // 2. Fetch Attendance Sheet when course or month changes
+  useEffect(() => {
+    const fetchSheet = async () => {
+      if (!filterCourseId || !filterMonth) return;
+      setIsFetchingSheet(true);
+      try {
+        const res = await fetch(`${API_BASE}/students/admin/attendance-sheet?courseId=${filterCourseId}&month=${filterMonth}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStudentsData(data.students || []);
+          setDaysInMonth(data.daysInMonth || 31);
+        } else {
+          setStudentsData([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch sheet:", err);
+      } finally {
+        setIsFetchingSheet(false);
+      }
+    };
+    if (token) fetchSheet();
+  }, [token, filterCourseId, filterMonth]);
 
   const daysArray = Array.from({length: daysInMonth}, (_, i) => i + 1);
 
-  // Generate deterministic pseudo-random attendance
-  const getAttendanceStatus = (studentIdx: number, day: number) => {
-    // Generate a seed based on student, day, and active filters so it changes dynamically
-    const seedStr = `${studentIdx}-${day}-${filterMonth}-${filterSession}-${filterCourse}`;
-    let seed = 0;
-    for (let i = 0; i < seedStr.length; i++) {
-      seed = ((seed << 5) - seed) + seedStr.charCodeAt(i);
-      seed |= 0; 
-    }
-    const rand = Math.abs(seed % 100);
-    
-    // Sundays (Assuming 2026, let's just make day % 7 == 0 a holiday for visual sake)
-    if (day % 7 === 0) return '-';
+  const filteredStudents = useMemo(() => {
+    return studentsData.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      s.roll.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [studentsData, searchTerm]);
 
-    if (rand < 82) return 'P';
-    if (rand < 95) return 'A';
-    return 'L';
-  };
-
-  const filteredStudents = filterSession === "2nd Year - III Sem" ? MOCK_STUDENTS.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.roll.toLowerCase().includes(searchTerm.toLowerCase())
-  ) : [];
   const handleExportCSV = () => {
-    if (!filterSession || !filterCourse || !filterMonth) {
+    if (!filterCourseId || !filterMonth) {
       alert("Please select filters to generate the sheet first.");
       return;
     }
@@ -81,21 +109,21 @@ export default function AdminSheets() {
       return;
     }
 
-    // Add metadata rows to the top of the CSV
+    const course = courses.find(c => c.id === filterCourseId);
     const metadata = [
       `"Month:","${filterMonth} 2026"`,
-      `"Session:","${filterSession}"`,
-      `"Course:","${filterCourse}"`,
-      "" // Empty row for spacing
+      `"Course:","${course?.subjectName || ''} (${course?.subjectCode || ''})"`,
+      `"Teacher:","${course?.teacherName || ''}"`,
+      "" 
     ];
 
     const headers = ["Roll No.", "Student Name", ...daysArray.map(String)];
     
-    const rows = filteredStudents.map((student, idx) => {
+    const rows = filteredStudents.map((student) => {
       const rowData = [
         student.roll,
-        `"${student.name}"`, // Quote names to handle any potential commas
-        ...daysArray.map(day => getAttendanceStatus(idx, day))
+        `"${student.name}"`,
+        ...student.attendance
       ];
       return rowData.join(",");
     });
@@ -104,18 +132,25 @@ export default function AdminSheets() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     
-    // Sanitize filename
-    const safeSession = filterSession.replace(/[^a-zA-Z0-9]/g, '_');
-    const safeCourse = filterCourse.replace(/[^a-zA-Z0-9]/g, '_');
+    const safeCourse = (course?.subjectCode || '').replace(/[^a-zA-Z0-9]/g, '_');
     
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Attendance_${safeSession}_${safeCourse}_${filterMonth}_2026.csv`);
+    link.setAttribute("download", `Attendance_${safeCourse}_${filterMonth}_2026.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  if (isLoading) {
+    return (
+      <DashboardLayout role="admin">
+        <div className="flex h-full items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="admin">
@@ -162,38 +197,18 @@ export default function AdminSheets() {
                 </div>
               </div>
             </div>
-            
-            <div className="flex flex-col gap-2 flex-1 min-w-[150px]">
-              <label className="text-foreground font-semibold text-sm">Session</label>
-              <div className="relative">
-                <select 
-                  value={filterSession} 
-                  onChange={e => {
-                    setFilterSession(e.target.value);
-                    setFilterCourse(''); 
-                  }}
-                  className="w-full bg-background border border-border text-foreground rounded-lg pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:border-blue-500 appearance-none"
-                >
-                  <option value="">Select Session</option>
-                  {SESSIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground text-xs">▼</div>
-              </div>
-            </div>
 
             <div className="flex flex-col gap-2 flex-1 min-w-[150px]">
               <label className="text-foreground font-semibold text-sm">Course</label>
               <div className="relative">
                 <select 
-                  value={filterCourse} 
-                  onChange={e => setFilterCourse(e.target.value)}
-                  disabled={!filterSession}
-                  className="w-full bg-background border border-border text-foreground rounded-lg pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:border-blue-500 appearance-none disabled:opacity-40 disabled:cursor-not-allowed"
+                  value={filterCourseId} 
+                  onChange={e => setFilterCourseId(e.target.value)}
+                  className="w-full bg-background border border-border text-foreground rounded-lg pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:border-blue-500 appearance-none"
                 >
-                  <option value="">Select Course</option>
-                  {filterSession && COURSES_BY_SESSION[filterSession].map(c => <option key={c} value={c}>{c}</option>)}
+                  {courses.map(c => <option key={c.id} value={c.id}>{c.subjectCode} — {c.subjectName} ({c.teacherName})</option>)}
                 </select>
-                {filterSession && <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground text-xs">▼</div>}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground text-xs">▼</div>
               </div>
             </div>
           </div>
@@ -213,14 +228,18 @@ export default function AdminSheets() {
                 />
               </div>
             </div>
-            {filterMonth && filterCourse && (
+            {filterMonth && filterCourseId && (
               <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground bg-background px-3 py-1.5 rounded-lg border border-border">
-                <span className="text-blue-500">{filterCourse}</span> • {filterMonth} 2026
+                <span className="text-blue-500">{courses.find(c => c.id === filterCourseId)?.subjectCode}</span> • {filterMonth} 2026
               </div>
             )}
           </div>
           
-          {filterSession && filterCourse && filterMonth ? (
+          {isFetchingSheet ? (
+            <div className="p-16 flex justify-center">
+               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filterCourseId && filterMonth ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left border-collapse min-w-[800px]">
                 <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border/50 sticky top-0 z-10">
@@ -240,7 +259,7 @@ export default function AdminSheets() {
                 </thead>
                 <tbody className="divide-y divide-border/50">
                   {filteredStudents.length > 0 ? (
-                    filteredStudents.map((student, idx) => (
+                    filteredStudents.map((student) => (
                       <tr key={student.roll} className="hover:bg-muted/30 transition-colors group">
                         <td className="px-4 py-3 font-mono font-bold text-xs sticky left-0 bg-card group-hover:bg-muted/50 border-r border-border/50 z-10 transition-colors">
                           {student.roll}
@@ -251,8 +270,7 @@ export default function AdminSheets() {
                           </div>
                           <span className="truncate">{student.name}</span>
                         </td>
-                        {daysArray.map(day => {
-                          const status = getAttendanceStatus(idx, day);
+                        {student.attendance.map((status, dayIdx) => {
                           let statusColor = "text-muted-foreground";
                           let bgColor = "transparent";
                           
@@ -271,7 +289,7 @@ export default function AdminSheets() {
                           }
                           
                           return (
-                            <td key={day} className="p-1 border-r border-border/10 last:border-r-0">
+                            <td key={dayIdx} className="p-1 border-r border-border/10 last:border-r-0">
                               <div className={`w-7 h-7 mx-auto flex items-center justify-center rounded text-xs ${statusColor} ${bgColor}`}>
                                 {status}
                               </div>
@@ -294,7 +312,7 @@ export default function AdminSheets() {
             <div className="p-16 text-center flex flex-col items-center justify-center bg-background/50">
               <FileSpreadsheet size={48} className="text-muted-foreground/30 mb-4" />
               <h3 className="font-semibold text-lg text-foreground">Select Filters to Load Sheet</h3>
-              <p className="text-muted-foreground text-sm max-w-sm mt-1">Please select a Session, Course, and Month above to generate the monthly attendance grid.</p>
+              <p className="text-muted-foreground text-sm max-w-sm mt-1">Please select a Course and Month above to generate the monthly attendance grid.</p>
             </div>
           )}
         </div>

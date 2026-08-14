@@ -1,8 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 
-const AVATAR_COLORS = ['#2F6F5E','#B4517A','#5B6FD6','#C77B3B','#3F8FBF','#7A5FBF','#4E8B5A'];
+const AVATAR_COLORS = [
+  '#2F6F5E',
+  '#B4517A',
+  '#5B6FD6',
+  '#C77B3B',
+  '#3F8FBF',
+  '#7A5FBF',
+  '#4E8B5A',
+];
 
 @Injectable()
 export class StudentsService {
@@ -18,10 +27,10 @@ export class StudentsService {
             courses: {
               include: {
                 subject: true,
-                primaryTeacher: true
-              }
-            }
-          }
+                primaryTeacher: true,
+              },
+            },
+          },
         },
         attendanceRecords: {
           include: {
@@ -32,17 +41,17 @@ export class StudentsService {
                     course: {
                       include: {
                         subject: true,
-                        primaryTeacher: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
+                        primaryTeacher: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
           orderBy: { markedAt: 'desc' },
-        }
-      }
+        },
+      },
     });
 
     if (!student) {
@@ -51,18 +60,21 @@ export class StudentsService {
 
     // 1. Attendance Calculations
     const totalMarkedRecords = student.attendanceRecords.length;
-    const attendedRecords = student.attendanceRecords.filter(r => r.status === 'PRESENT').length;
+    const attendedRecords = student.attendanceRecords.filter(
+      (r) => r.status === 'PRESENT',
+    ).length;
     const absentRecords = totalMarkedRecords - attendedRecords;
-    
+
     // Safety check: Avoid NaN (0/0)
-    const attendancePercentage = totalMarkedRecords > 0 
-      ? Math.round((attendedRecords / totalMarkedRecords) * 100) 
-      : 0;
+    const attendancePercentage =
+      totalMarkedRecords > 0
+        ? Math.round((attendedRecords / totalMarkedRecords) * 100)
+        : 0;
 
     // 2. Today's Schedule (Timetable representation for today)
     // We will find today's classes from attendance sessions or simulate from courses for now if timetable isn't fully seeded.
     // Wait, the user specifically said: "Only timetable entries for today's day/date. Use actual timetable/academic schedule data if it exists."
-    
+
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date();
@@ -71,27 +83,27 @@ export class StudentsService {
     const todayScheduledClasses = await this.prisma.scheduledClass.findMany({
       where: {
         course: { sectionId: student.sectionId },
-        date: { gte: startOfDay, lte: endOfDay }
+        date: { gte: startOfDay, lte: endOfDay },
       },
       include: {
         course: {
           include: {
             subject: true,
-            primaryTeacher: true
-          }
+            primaryTeacher: true,
+          },
         },
         attendanceSession: {
           include: {
             records: {
-              where: { studentId: student.id }
-            }
-          }
-        }
+              where: { studentId: student.id },
+            },
+          },
+        },
       },
-      orderBy: { startTime: 'asc' }
+      orderBy: { startTime: 'asc' },
     });
 
-    const todaySchedule = todayScheduledClasses.map(sc => {
+    const todaySchedule = todayScheduledClasses.map((sc) => {
       const session = sc.attendanceSession;
       let computedStatus = 'UPCOMING';
       if (session) {
@@ -113,41 +125,47 @@ export class StudentsService {
         room: 'TBD', // Schema TimetableRule has room, but ScheduledClass doesn't directly.
         startTime: sc.startTime,
         endTime: sc.endTime,
-        status: computedStatus
+        status: computedStatus,
       };
     });
 
     // 3. Recent History (Top 5)
-    const recentAttendance = student.attendanceRecords.slice(0, 5).map(record => ({
-      id: record.id,
-      courseName: record.session.scheduledClass.course.subject.name,
-      date: record.markedAt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
-      status: record.status
-    }));
+    const recentAttendance = student.attendanceRecords
+      .slice(0, 5)
+      .map((record) => ({
+        id: record.id,
+        courseName: record.session.scheduledClass.course.subject.name,
+        date: record.markedAt.toLocaleDateString([], {
+          month: 'short',
+          day: 'numeric',
+        }),
+        status: record.status,
+      }));
 
     // 4. Courses (Brief summary)
-    const courses = student.section?.courses.map(c => ({
-      id: c.id,
-      code: c.subject.code,
-      name: c.subject.name,
-      teacherName: c.primaryTeacher?.name || 'Unassigned'
-    })) || [];
+    const courses =
+      student.section?.courses.map((c) => ({
+        id: c.id,
+        code: c.subject.code,
+        name: c.subject.name,
+        teacherName: c.primaryTeacher?.name || 'Unassigned',
+      })) || [];
 
     return {
       student: {
         name: student.name,
         rollNumber: student.rollNumber,
-        semester: student.section?.semester?.semesterNumber || 3
+        semester: student.section?.semester?.semesterNumber || 3,
       },
       attendance: {
         percentage: attendancePercentage,
         attended: attendedRecords,
         total: totalMarkedRecords,
-        absent: absentRecords
+        absent: absentRecords,
       },
       courses,
       todaySchedule,
-      recentAttendance
+      recentAttendance,
     };
   }
 
@@ -160,24 +178,26 @@ export class StudentsService {
             courses: {
               include: {
                 subject: true,
-                primaryTeacher: true
-              }
-            }
-          }
-        }
-      }
+                primaryTeacher: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!student) throw new Error('Student not found');
 
-    return student.section?.courses.map(c => ({
-      id: c.id,
-      code: c.subject.code,
-      name: c.subject.name,
-      credits: c.subject.credits,
-      isPractical: c.subject.isPractical,
-      teacherName: c.primaryTeacher?.name || 'Unassigned'
-    })) || [];
+    return (
+      student.section?.courses.map((c) => ({
+        id: c.id,
+        code: c.subject.code,
+        name: c.subject.name,
+        credits: c.subject.credits,
+        isPractical: c.subject.isPractical,
+        teacherName: c.primaryTeacher?.name || 'Unassigned',
+      })) || []
+    );
   }
 
   async getStudentAttendance(userId: string) {
@@ -193,56 +213,57 @@ export class StudentsService {
                     course: {
                       include: {
                         subject: true,
-                        primaryTeacher: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
+                        primaryTeacher: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
-          orderBy: { markedAt: 'desc' }
-        }
-      }
+          orderBy: { markedAt: 'desc' },
+        },
+      },
     });
 
     if (!student) throw new Error('Student not found');
 
-    return student.attendanceRecords.map(r => ({
+    return student.attendanceRecords.map((r) => ({
       id: r.id,
       date: r.markedAt.toISOString(),
       courseCode: r.session.scheduledClass.course.subject.code,
       courseName: r.session.scheduledClass.course.subject.name,
-      faculty: r.session.scheduledClass.course.primaryTeacher?.name || 'Unknown',
+      faculty:
+        r.session.scheduledClass.course.primaryTeacher?.name || 'Unknown',
       time: r.session.scheduledClass.startTime,
       status: r.status,
-      method: r.session.verificationMethod || 'MANUAL'
+      method: r.session.verificationMethod || 'MANUAL',
     }));
   }
 
   async getStudentTimetable(userId: string) {
     const student = await this.prisma.student.findUnique({
-      where: { userId }
+      where: { userId },
     });
 
     if (!student) throw new Error('Student not found');
 
     const rules = await this.prisma.timetableRule.findMany({
       where: {
-        course: { sectionId: student.sectionId }
+        course: { sectionId: student.sectionId },
       },
       include: {
         course: {
           include: {
             subject: true,
-            primaryTeacher: true
-          }
-        }
+            primaryTeacher: true,
+          },
+        },
       },
-      orderBy: { startTime: 'asc' }
+      orderBy: { startTime: 'asc' },
     });
 
-    const timetable = rules.map(rule => ({
+    const timetable = rules.map((rule) => ({
       id: rule.id,
       dayOfWeek: rule.dayOfWeek,
       startTime: rule.startTime,
@@ -250,22 +271,33 @@ export class StudentsService {
       room: rule.room || 'TBD',
       courseName: rule.course.subject.name,
       courseCode: rule.course.subject.code,
-      teacherName: rule.course.primaryTeacher?.name || 'Unassigned'
+      teacherName: rule.course.primaryTeacher?.name || 'Unassigned',
     }));
 
     // Group by DayOfWeek to make it easier for frontend
-    const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-    const grouped = days.reduce((acc, day) => {
-      acc[day] = timetable.filter(t => t.dayOfWeek === day);
-      return acc;
-    }, {} as Record<string, typeof timetable>);
+    const days = [
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRIDAY',
+      'SATURDAY',
+      'SUNDAY',
+    ];
+    const grouped = days.reduce(
+      (acc, day) => {
+        acc[day] = timetable.filter((t) => t.dayOfWeek === day);
+        return acc;
+      },
+      {} as Record<string, typeof timetable>,
+    );
 
     return grouped;
   }
 
   async getActiveSession(userId: string) {
     const student = await this.prisma.student.findUnique({
-      where: { userId }
+      where: { userId },
     });
     if (!student) throw new Error('Student not found');
 
@@ -273,21 +305,21 @@ export class StudentsService {
       where: {
         status: 'LIVE',
         scheduledClass: {
-          course: { sectionId: student.sectionId }
-        }
+          course: { sectionId: student.sectionId },
+        },
       },
       include: {
         scheduledClass: {
           include: {
             course: {
-              include: { subject: true, primaryTeacher: true }
-            }
-          }
+              include: { subject: true, primaryTeacher: true },
+            },
+          },
         },
         records: {
-          where: { studentId: student.id }
-        }
-      }
+          where: { studentId: student.id },
+        },
+      },
     });
 
     if (!activeSession) return null;
@@ -295,10 +327,11 @@ export class StudentsService {
     return {
       sessionId: activeSession.id,
       courseName: activeSession.scheduledClass.course.subject.name,
-      teacherName: activeSession.scheduledClass.course.primaryTeacher?.name || 'Unknown',
+      teacherName:
+        activeSession.scheduledClass.course.primaryTeacher?.name || 'Unknown',
       room: 'TBD',
       verificationMethod: activeSession.verificationMethod,
-      alreadyMarked: activeSession.records.length > 0
+      alreadyMarked: activeSession.records.length > 0,
     };
   }
 
@@ -308,9 +341,10 @@ export class StudentsService {
 
     const session = await this.prisma.attendanceSession.findUnique({
       where: { id: sessionId },
-      include: { scheduledClass: { include: { course: true } } }
+      include: { scheduledClass: { include: { course: true } } },
     });
-    if (!session || session.status !== 'LIVE') throw new Error('Session is not active');
+    if (!session || session.status !== 'LIVE')
+      throw new Error('Session is not active');
 
     // Section membership validation: student must belong to the session's course section
     if (student.sectionId !== session.scheduledClass.course.sectionId) {
@@ -318,7 +352,7 @@ export class StudentsService {
     }
 
     const existing = await this.prisma.attendanceRecord.findUnique({
-      where: { sessionId_studentId: { sessionId, studentId: student.id } }
+      where: { sessionId_studentId: { sessionId, studentId: student.id } },
     });
 
     if (existing) {
@@ -331,8 +365,8 @@ export class StudentsService {
         studentId: student.id,
         status: 'PRESENT',
         verificationMethod: session.verificationMethod || 'FACE',
-        markedAt: new Date()
-      }
+        markedAt: new Date(),
+      },
     });
 
     return { success: true };
@@ -345,20 +379,20 @@ export class StudentsService {
         section: {
           include: {
             courses: {
-              include: { subject: true, primaryTeacher: true }
-            }
-          }
+              include: { subject: true, primaryTeacher: true },
+            },
+          },
         },
         attendanceRecords: {
           include: {
             session: {
               include: {
-                scheduledClass: true
-              }
-            }
-          }
-        }
-      }
+                scheduledClass: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!student) throw new Error('Student not found');
@@ -368,7 +402,7 @@ export class StudentsService {
     let absentCount = 0;
     let excusedCount = 0;
 
-    student.attendanceRecords.forEach(r => {
+    student.attendanceRecords.forEach((r) => {
       if (r.status === 'PRESENT') presentCount++;
       else if (r.status === 'ABSENT') absentCount++;
       else excusedCount++;
@@ -380,27 +414,38 @@ export class StudentsService {
       excusedPct: totalRecords > 0 ? (excusedCount / totalRecords) * 100 : 0,
     };
 
-    const courseBreakdown = student.section?.courses.map(course => {
-      const courseRecords = student.attendanceRecords.filter(r => r.session.scheduledClass.courseId === course.id);
-      const cTotal = courseRecords.length;
-      const cPresent = courseRecords.filter(r => r.status === 'PRESENT').length;
-      const cPct = cTotal > 0 ? Math.round((cPresent / cTotal) * 100) : 0;
-      
-      return {
-        courseId: course.id,
-        courseName: course.subject.name,
-        courseCode: course.subject.code,
-        teacherName: course.primaryTeacher?.name || 'Unknown',
-        percentage: cPct
-      };
-    }) || [];
+    const courseBreakdown =
+      student.section?.courses.map((course) => {
+        const courseRecords = student.attendanceRecords.filter(
+          (r) => r.session.scheduledClass.courseId === course.id,
+        );
+        const cTotal = courseRecords.length;
+        const cPresent = courseRecords.filter(
+          (r) => r.status === 'PRESENT',
+        ).length;
+        const cPct = cTotal > 0 ? Math.round((cPresent / cTotal) * 100) : 0;
 
-    const riskCourses = courseBreakdown.filter(c => c.percentage < 75 && student.attendanceRecords.some(r => r.session.scheduledClass.courseId === c.courseId));
+        return {
+          courseId: course.id,
+          courseName: course.subject.name,
+          courseCode: course.subject.code,
+          teacherName: course.primaryTeacher?.name || 'Unknown',
+          percentage: cPct,
+        };
+      }) || [];
+
+    const riskCourses = courseBreakdown.filter(
+      (c) =>
+        c.percentage < 75 &&
+        student.attendanceRecords.some(
+          (r) => r.session.scheduledClass.courseId === c.courseId,
+        ),
+    );
 
     return {
       overall,
       courseBreakdown,
-      riskCourses
+      riskCourses,
     };
   }
 
@@ -413,10 +458,10 @@ export class StudentsService {
         batch: true,
         section: {
           include: {
-            semester: true
-          }
-        }
-      }
+            semester: true,
+          },
+        },
+      },
     });
 
     if (!student) throw new Error('Student not found');
@@ -426,14 +471,19 @@ export class StudentsService {
       rollNumber: student.rollNumber,
       email: student.user?.email || student.profile?.email || 'Not provided',
       mobileNumber: student.profile?.mobileNumber || 'Not provided',
-      dob: student.profile?.dob ? student.profile.dob.toISOString().split('T')[0] : 'Not provided',
+      dob: student.profile?.dob
+        ? student.profile.dob.toISOString().split('T')[0]
+        : 'Not provided',
       gender: student.profile?.gender || 'Not specified',
       bloodGroup: student.profile?.bloodGroup || 'Not specified',
       photoUrl: student.profile?.photoUrl || null,
       admissionYear: student.profile?.admissionYear || new Date().getFullYear(),
-      expectedGraduationYear: student.profile?.expectedGraduationYear || (new Date().getFullYear() + 4),
+      expectedGraduationYear:
+        student.profile?.expectedGraduationYear || new Date().getFullYear() + 4,
       batch: student.batch?.name || 'Unassigned Batch',
-      semester: student.section?.semester ? `Semester ${student.section.semester.semesterNumber}` : 'Unassigned Semester',
+      semester: student.section?.semester
+        ? `Semester ${student.section.semester.semesterNumber}`
+        : 'Unassigned Semester',
       section: student.section?.name || 'Unassigned Section',
     };
   }
@@ -441,22 +491,22 @@ export class StudentsService {
   async updateProfilePhoto(userId: string, photoUrl: string) {
     const student = await this.prisma.student.findUnique({
       where: { userId },
-      include: { profile: true }
+      include: { profile: true },
     });
 
     if (!student) throw new Error('Student not found');
-    
+
     if (student.profile) {
       await this.prisma.studentProfile.update({
         where: { id: student.profile.id },
-        data: { photoUrl }
+        data: { photoUrl },
       });
     } else {
       await this.prisma.studentProfile.create({
         data: {
           studentId: student.id,
-          photoUrl
-        }
+          photoUrl,
+        },
       });
     }
 
@@ -467,81 +517,123 @@ export class StudentsService {
     const students = await this.prisma.student.findMany({
       include: {
         batch: { include: { session: true } },
-        section: true,
+        section: {
+          include: {
+            semester: true,
+            courses: { include: { subject: true } },
+          },
+        },
         user: true,
         profile: { select: { photoUrl: true } },
+        faceEmbedding: { select: { id: true } },
         attendanceRecords: {
-          include: { session: { include: { scheduledClass: { include: { course: { include: { subject: true } } } } } } }
-        }
-      }
+          include: {
+            session: {
+              include: {
+                scheduledClass: {
+                  include: { course: { include: { subject: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
-    const MONTHS = ['July','June','May','April','March','February','January'];
-    const DAY_COLS = Array.from({length:30}, (_,i)=>String(i+1).padStart(2,'0'));
+    const MONTHS = [
+      'July',
+      'June',
+      'May',
+      'April',
+      'March',
+      'February',
+      'January',
+    ];
+    const DAY_COLS = Array.from({ length: 30 }, (_, i) =>
+      String(i + 1).padStart(2, '0'),
+    );
 
     return students.map((s, i) => {
       // 1. Build Monthly
       const monthly: any = {};
-      MONTHS.forEach(m => monthly[m] = { present: 0, absent: 100 }); // Default 0% present if no data
-      
+      MONTHS.forEach((m) => (monthly[m] = { present: 0, absent: 100 })); // Default 0% present if no data
+
       let totalPresent = 0;
       let totalRecords = 0;
 
-      const recordsByMonth: Record<string, { p: number, a: number }> = {};
-      MONTHS.forEach(m => recordsByMonth[m] = { p: 0, a: 0 });
+      const recordsByMonth: Record<string, { p: number; a: number }> = {};
+      MONTHS.forEach((m) => (recordsByMonth[m] = { p: 0, a: 0 }));
 
       const matrix: any = {};
 
-      s.attendanceRecords.forEach(record => {
-          totalRecords++;
-          if (record.status === 'PRESENT') totalPresent++;
+      s.attendanceRecords.forEach((record) => {
+        totalRecords++;
+        if (record.status === 'PRESENT') totalPresent++;
 
-          const date = record.markedAt;
-          const monthName = date.toLocaleString('default', { month: 'long' });
-          if (recordsByMonth[monthName]) {
-              if (record.status === 'PRESENT') recordsByMonth[monthName].p++;
-              else recordsByMonth[monthName].a++;
-          }
+        const date = record.markedAt;
+        const monthName = date.toLocaleString('default', { month: 'long' });
+        if (recordsByMonth[monthName]) {
+          if (record.status === 'PRESENT') recordsByMonth[monthName].p++;
+          else recordsByMonth[monthName].a++;
+        }
 
-          const courseCode = record.session.scheduledClass.course.subject.code;
-          if (!matrix[courseCode]) matrix[courseCode] = {};
-          if (!matrix[courseCode][monthName]) {
-              matrix[courseCode][monthName] = Array(30).fill('0');
-          }
-          const dayIndex = Math.min(date.getDate() - 1, 29);
-          matrix[courseCode][monthName][dayIndex] = record.status === 'PRESENT' ? '1' : '0';
+        const courseCode = record.session.scheduledClass.course.subject.code;
+        if (!matrix[courseCode]) matrix[courseCode] = {};
+        if (!matrix[courseCode][monthName]) {
+          matrix[courseCode][monthName] = Array(30).fill('0');
+        }
+        const dayIndex = Math.min(date.getDate() - 1, 29);
+        matrix[courseCode][monthName][dayIndex] =
+          record.status === 'PRESENT' ? '1' : '0';
       });
 
-      MONTHS.forEach(m => {
-          const stats = recordsByMonth[m];
-          const total = stats.p + stats.a;
-          if (total > 0) {
-              monthly[m] = { present: Math.round((stats.p / total) * 100), absent: Math.round((stats.a / total) * 100) };
-          }
+      MONTHS.forEach((m) => {
+        const stats = recordsByMonth[m];
+        const total = stats.p + stats.a;
+        if (total > 0) {
+          monthly[m] = {
+            present: Math.round((stats.p / total) * 100),
+            absent: Math.round((stats.a / total) * 100),
+          };
+        }
       });
 
-      const overallAttendance = totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0;
+      const overallAttendance =
+        totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0;
 
-      // Fallback matrix layout so UI doesn't crash if empty
-      if (Object.keys(matrix).length === 0) {
-          matrix['CC101'] = {};
-          MONTHS.forEach(m => matrix['CC101'][m] = Array(30).fill('0'));
+      // Fallback matrix layout so UI doesn't crash if empty — use real course codes
+      const sectionCourses = (s.section as any)?.courses || [];
+      if (Object.keys(matrix).length === 0 && sectionCourses.length > 0) {
+        const fallbackCode = sectionCourses[0].subject.code;
+        matrix[fallbackCode] = {};
+        MONTHS.forEach((m) => (matrix[fallbackCode][m] = Array(30).fill('0')));
+      } else if (Object.keys(matrix).length === 0) {
+        matrix['N/A'] = {};
+        MONTHS.forEach((m) => (matrix['N/A'][m] = Array(30).fill('0')));
       }
+
+      const semNum = (s.section as any)?.semester?.semesterNumber;
+      const sectionName = s.section?.name || 'Section A';
 
       return {
         id: s.id,
         name: s.name,
         roll: s.rollNumber,
-        course: 'EC202', // Mocked as we don't have this in student model directly mapped
-        examRoll: s.registrationNumber ? s.registrationNumber.replace('PWC', 'EXAM') : '',
+        course: sectionName,
+        examRoll: s.registrationNumber
+          ? s.registrationNumber.replace('PWC', 'EXAM')
+          : '',
         regNo: s.registrationNumber || '',
-        session: s.batch && s.batch.session ? `${s.batch.session.startYear}-${s.batch.session.endYear}` : '2025-27',
-        classText: s.section ? `MCA, ${s.section.name}` : 'MCA',
+        session:
+          s.batch && s.batch.session
+            ? `${s.batch.session.startYear}-${s.batch.session.endYear}`
+            : '2025-27',
+        classText: semNum ? `MCA, Sem-${semNum}` : 'MCA',
         color: AVATAR_COLORS[i % AVATAR_COLORS.length],
         status: s.status === 'ACTIVE' ? 'ACTIVE' : 'WARNING',
-        verification: s.status === 'ACTIVE' ? 'Verified' : 'Not verified',
-        time: '09:00 AM',
-        faceEnrolled: true,
+        verification: (s as any).faceEmbedding ? 'Verified' : 'Not verified',
+        time: '—',
+        faceEnrolled: !!(s as any).faceEmbedding,
         attendance: overallAttendance,
         avatar: s.profile?.photoUrl || undefined,
         monthly,
@@ -551,7 +643,8 @@ export class StudentsService {
   }
 
   async create(data: any) {
-    const passwordHash = await bcrypt.hash('Welcome@123', 10);
+    const generatedPassword = randomBytes(12).toString('base64url');
+    const passwordHash = await bcrypt.hash(generatedPassword, 10);
     const batch = await this.prisma.batch.findFirst();
     const section = await this.prisma.section.findFirst();
 
@@ -569,10 +662,10 @@ export class StudentsService {
             registrationNumber: data.regNo,
             name: data.name,
             status: data.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
-          }
-        }
+          },
+        },
       },
-      include: { studentProfile: true }
+      include: { studentProfile: true },
     });
 
     return {
@@ -589,7 +682,8 @@ export class StudentsService {
       verification: data.verification || 'Not verified',
       time: '—',
       faceEnrolled: false,
-      attendance: 0
+      attendance: 0,
+      temporaryPassword: generatedPassword,
     };
   }
 
@@ -600,15 +694,15 @@ export class StudentsService {
         name: data.name,
         rollNumber: data.roll,
         registrationNumber: data.regNo,
-        status: data.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE'
+        status: data.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
       },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (data.status) {
       await this.prisma.user.update({
         where: { id: student.userId },
-        data: { status: data.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING' }
+        data: { status: data.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING' },
       });
     }
 
@@ -623,7 +717,7 @@ export class StudentsService {
       examRoll: data.examRoll,
       session: data.session,
       classText: data.classText,
-      verification: data.verification
+      verification: data.verification,
     };
   }
 
@@ -634,5 +728,91 @@ export class StudentsService {
     }
     return { success: true };
   }
-}
 
+  async getAdminCourses() {
+    const courses = await this.prisma.course.findMany({
+      where: { status: 'ACTIVE' },
+      include: {
+        subject: true,
+        section: { include: { semester: true } },
+        primaryTeacher: true,
+      },
+    });
+
+    return courses.map((c) => ({
+      id: c.id,
+      subjectName: c.subject.name,
+      subjectCode: c.subject.code,
+      sectionName: c.section.name,
+      semesterNumber: c.section.semester.semesterNumber,
+      teacherName: c.primaryTeacher?.name || 'Unassigned',
+    }));
+  }
+
+  async getAdminAttendanceSheet(courseId: string, monthName: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: { subject: true, section: true },
+    });
+
+    if (!course)
+      return {
+        courseName: 'Unknown',
+        month: monthName,
+        daysInMonth: 31,
+        students: [],
+      };
+
+    const monthIndex = new Date(`${monthName} 1, 2026`).getMonth();
+    const startDate = new Date(2026, monthIndex, 1);
+    const endDate = new Date(2026, monthIndex + 1, 0, 23, 59, 59);
+
+    const students = await this.prisma.student.findMany({
+      where: { sectionId: course.sectionId, status: 'ACTIVE' },
+      orderBy: { rollNumber: 'asc' },
+    });
+
+    const sessions = await this.prisma.attendanceSession.findMany({
+      where: {
+        scheduledClass: {
+          courseId: course.id,
+          date: { gte: startDate, lte: endDate },
+        },
+      },
+      include: { scheduledClass: true, records: true },
+    });
+
+    const daysInMonth = endDate.getDate();
+    const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    const attendanceData = students.map((student) => {
+      const studentDays = daysArray.map((day) => {
+        const daySession = sessions.find(
+          (s) => s.scheduledClass.date.getDate() === day,
+        );
+        if (!daySession) return '-';
+        const record = daySession.records.find(
+          (r) => r.studentId === student.id,
+        );
+        if (!record) return 'A';
+        if (record.status === 'PRESENT') return 'P';
+        if (record.status === 'LATE') return 'L';
+        return 'A';
+      });
+
+      return {
+        id: student.id,
+        roll: student.rollNumber,
+        name: student.name,
+        attendance: studentDays,
+      };
+    });
+
+    return {
+      courseName: course.subject.name,
+      month: monthName,
+      daysInMonth,
+      students: attendanceData,
+    };
+  }
+}

@@ -4,7 +4,10 @@ import {
   User, Mail, Phone, MapPin, Award, BookOpen, FileText, 
   GraduationCap, Briefcase, ExternalLink, Library
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useAppStore } from '@/store/useAppStore';
+import { fetchWithAuth } from '@/store/useDataStore';
 import { teacherProfilesData } from '@/data/teacherProfiles';
 
 export default function TeacherMyProfile() {
@@ -13,6 +16,30 @@ export default function TeacherMyProfile() {
   const profile = Object.values(teacherProfilesData).find(
     (t) => t.email.toLowerCase() === user?.email?.toLowerCase()
   );
+
+  const [currentStatus, setCurrentStatus] = React.useState<string>('ACTIVE');
+  const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
+
+  React.useEffect(() => {
+    fetchWithAuth('/teacher-portal/dashboard')
+      .then(d => { if (d.status) setCurrentStatus(d.status); })
+      .catch(console.error);
+  }, []);
+
+  const handleStatusChange = async (newStatus: string) => {
+    setIsUpdatingStatus(true);
+    setCurrentStatus(newStatus);
+    try {
+      await fetchWithAuth('/teacher-portal/status', {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+    } catch (e) {
+      console.error('Failed to update status', e);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   const name = profile?.name || user?.name || 'Unknown Teacher';
   const email = profile?.email || user?.email || '';
@@ -61,10 +88,36 @@ export default function TeacherMyProfile() {
             </div>
           </div>
 
-          <div className="flex-1 text-center md:text-left space-y-4">
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight text-foreground">{name}</h1>
-              {qualifications && <p className="text-lg text-blue-500 font-semibold mt-1">{qualifications}</p>}
+          <div className="flex-1 text-center md:text-left space-y-4 w-full">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight text-foreground">{name}</h1>
+                {qualifications && <p className="text-lg text-blue-500 font-semibold mt-1">{qualifications}</p>}
+              </div>
+              <div className="flex flex-col items-center md:items-end gap-1.5">
+                <Label className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                    currentStatus === 'ACTIVE' ? 'text-green-500' :
+                    currentStatus === 'ON_LEAVE' ? 'text-yellow-500' :
+                    'text-red-500'
+                  }`}
+                >
+                  {currentStatus === 'ACTIVE' ? 'ACTIVE' : currentStatus === 'ON_LEAVE' ? 'ON LEAVE' : 'INACTIVE'}
+                </Label>
+                <div className="flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-full border border-border/50 shadow-sm">
+                  <span className={`text-xs font-medium transition-colors ${currentStatus === 'ACTIVE' ? 'text-green-500' : 'text-muted-foreground'}`}>Normal</span>
+                  <Switch 
+                    id="teacher-status-toggle"
+                    checked={currentStatus === 'ON_LEAVE'}
+                    disabled={currentStatus === 'INACTIVE' || isUpdatingStatus}
+                    onCheckedChange={(checked) => handleStatusChange(checked ? 'ON_LEAVE' : 'ACTIVE')}
+                    className={`transition-colors ${
+                      currentStatus === 'ON_LEAVE' ? '!bg-yellow-500' : 
+                      currentStatus === 'ACTIVE' ? '!bg-green-500' : '!bg-red-500 opacity-50'
+                    }`}
+                  />
+                  <span className={`text-xs font-medium transition-colors ${currentStatus === 'ON_LEAVE' ? 'text-yellow-500' : 'text-muted-foreground'}`}>On Leave</span>
+                </div>
+              </div>
             </div>
             
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">

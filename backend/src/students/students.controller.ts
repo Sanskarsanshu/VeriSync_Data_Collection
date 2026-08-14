@@ -1,4 +1,14 @@
-import { Controller, Get, Delete, Param, Post, Patch, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Param,
+  Post,
+  Patch,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -68,7 +78,10 @@ export class StudentsController {
   @Patch('me/profile/photo')
   updateProfilePhoto(@Req() req: Request, @Body() body: { photoUrl: string }) {
     const jwtUser = (req as any).user;
-    return this.studentsService.updateProfilePhoto(jwtUser.userId, body.photoUrl);
+    return this.studentsService.updateProfilePhoto(
+      jwtUser.userId,
+      body.photoUrl,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -87,6 +100,22 @@ export class StudentsController {
 
   @UseGuards(JwtAuthGuard)
   @Roles('ADMIN')
+  @Get('admin/courses')
+  getAdminCourses() {
+    return this.studentsService.getAdminCourses();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
+  @Get('admin/attendance-sheet')
+  getAdminAttendanceSheet(@Req() req: Request) {
+    const courseId = (req.query as any).courseId as string;
+    const month = (req.query as any).month as string;
+    return this.studentsService.getAdminAttendanceSheet(courseId, month);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
   @Patch(':id')
   update(@Param('id') id: string, @Body() data: any) {
     return this.studentsService.update(id, data);
@@ -99,4 +128,3 @@ export class StudentsController {
     return this.studentsService.remove(id);
   }
 }
-

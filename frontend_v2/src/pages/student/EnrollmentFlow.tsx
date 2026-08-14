@@ -37,7 +37,7 @@ export default function EnrollmentFlow() {
   const [cameraActive, setCameraActive] = useState(false);
   const [captureStatus, setCaptureStatus] = useState('Initialize Camera');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
   useEffect(() => {
     if (!token) {

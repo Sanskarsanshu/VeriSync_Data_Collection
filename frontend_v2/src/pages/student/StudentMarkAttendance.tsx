@@ -29,7 +29,7 @@ export default function StudentMarkAttendance() {
     try {
       setLoading(true);
       const token = sessionStorage.getItem('verisync_token');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
       const response = await fetch(`${API_URL}/students/me/active-session`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
@@ -55,7 +55,7 @@ export default function StudentMarkAttendance() {
     setTimeout(async () => {
       try {
         const token = sessionStorage.getItem('verisync_token');
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
         const response = await fetch(`${API_URL}/students/me/mark-attendance/${activeSession.sessionId}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },

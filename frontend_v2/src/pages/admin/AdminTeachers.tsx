@@ -85,32 +85,50 @@ export default function AdminTeachers() {
     setIsModalOpen(true);
   };
 
-  const handleSaveTeacher = () => {
+  const handleSaveTeacher = async () => {
     if (!formData.name || !formData.id) {
       addNotification({ title: 'Validation Error', message: 'Full name and Employee ID are required.', type: 'warning' });
       return;
     }
-
+    
     if (isEditMode && editingId) {
-      updateTeacher(editingId, { ...formData, dept: 'MCA' });
+      updateTeacher(editingId, formData as Partial<Teacher>);
       addNotification({
         title: 'Teacher Updated',
-        message: `${formData.name} (${formData.id}) has been updated.`,
-        type: 'info'
+        message: `${formData.name}'s profile has been updated.`,
+        type: 'success'
       });
     } else {
-      const newTeacher: Teacher = {
-        ...formData,
-        dept: 'MCA',
+      const newTeacher: Partial<Teacher> = {
+        name: formData.name,
+        employeeId: formData.id,
+        email: formData.email || `${formData.name.split(' ')[0].toLowerCase()}.${formData.id.toLowerCase()}@pwc.in`,
+        department: { id: 'd1', name: formData.dept, code: 'MCA' },
+        designation: formData.designation,
         subjects: [],
         status: 'ACTIVE',
       };
-      addTeacher(newTeacher);
-      addNotification({
-        title: 'Teacher Added',
-        message: `${newTeacher.name} has been added to the faculty directory.`,
-        type: 'success'
-      });
+      
+      try {
+        const created = await addTeacher(newTeacher as Teacher);
+        addNotification({
+          title: 'Teacher Added',
+          message: (created as any)?.temporaryPassword
+            ? `${newTeacher.name} added. Temporary password: ${(created as any).temporaryPassword}`
+            : `${newTeacher.name} has been added to the faculty directory.`,
+          type: 'success'
+        });
+      } catch (err: any) {
+        let errorMsg = err?.message || `Could not add ${newTeacher.name}. Please check the server connection.`;
+        // Strip out "API Error: " if present to make it cleaner
+        errorMsg = errorMsg.replace('API Error: ', '');
+        
+        addNotification({
+          title: 'Add Failed',
+          message: errorMsg,
+          type: 'error'
+        });
+      }
     }
     
     setIsModalOpen(false);

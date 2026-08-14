@@ -17,7 +17,10 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() body: any, @Res({ passthrough: true }) response: Response) {
+  async login(
+    @Body() body: any,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const { email, password } = body;
     const user = await this.authService.validateUser(email, password);
 
@@ -56,7 +59,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@Req() req: Request) {
-    const jwtUser = (req as any).user as { userId: string; email: string; role: string };
+    const jwtUser = (req as any).user as {
+      userId: string;
+      email: string;
+      role: string;
+    };
     return this.authService.getMe(jwtUser.userId);
   }
 

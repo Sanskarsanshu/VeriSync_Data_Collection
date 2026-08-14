@@ -20,16 +20,16 @@ import { TeacherPortalModule } from './teacher-portal/teacher-portal.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    CalendarModule, 
-    AuthModule, 
-    TimetableModule, 
-    AdminModule, 
-    EnrollmentModule, 
-    TeachersModule, 
-    SubjectsModule, 
-    StudentsModule, 
+    CalendarModule,
+    AuthModule,
+    TimetableModule,
+    AdminModule,
+    EnrollmentModule,
+    TeachersModule,
+    SubjectsModule,
+    StudentsModule,
     AttendanceModule,
-    TeacherPortalModule
+    TeacherPortalModule,
   ],
   controllers: [AppController],
   providers: [

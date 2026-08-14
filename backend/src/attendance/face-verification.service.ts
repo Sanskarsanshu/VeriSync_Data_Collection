@@ -1,11 +1,21 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class FaceVerificationService {
-  private readonly SIMILARITY_THRESHOLD = 0.85;
+  private readonly similarityThreshold: number;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {
+    const configured = Number(
+      config.get<string>('FACE_SIMILARITY_THRESHOLD', '0.85'),
+    );
+    this.similarityThreshold =
+      Number.isFinite(configured) && configured > 0 ? configured : 0.85;
+  }
 
   /**
    * Abstracted method to find the best match for a given facial embedding.
@@ -23,10 +33,13 @@ export class FaceVerificationService {
 
     // Linear search using Cosine Similarity
     for (const student of students) {
-      if (student.faceEmbedding?.embedding && Array.isArray(student.faceEmbedding.embedding)) {
-        const storedEmbedding = student.faceEmbedding.embedding as number[];
+      if (
+        student.faceEmbedding?.embedding &&
+        Array.isArray(student.faceEmbedding.embedding)
+      ) {
+        const storedEmbedding = student.faceEmbedding.embedding;
         const similarity = this.cosineSimilarity(embedding, storedEmbedding);
-        
+
         if (similarity > highestSimilarity) {
           highestSimilarity = similarity;
           bestMatch = student;
@@ -34,8 +47,12 @@ export class FaceVerificationService {
       }
     }
 
-    if (bestMatch && highestSimilarity >= this.SIMILARITY_THRESHOLD) {
-      return { matched: true, student: bestMatch, confidence: highestSimilarity };
+    if (bestMatch && highestSimilarity >= this.similarityThreshold) {
+      return {
+        matched: true,
+        student: bestMatch,
+        confidence: highestSimilarity,
+      };
     }
 
     return { matched: false, student: null, confidence: highestSimilarity };
@@ -43,19 +60,35 @@ export class FaceVerificationService {
 
   /**
    * Validates cryptographic or challenge-response evidence for Liveness.
-   * Currently verifies that the client completed a challenge successfully rather than just asserting a score.
+   * The expected signature is read from configuration (FACE_LIVENESS_SIGNATURE).
+   * If no signature is configured the verification FAILS CLOSED so that a
+   * misconfigured deployment cannot silently accept client-supplied evidence.
    */
   async validateLiveness(evidence: any) {
     if (!evidence || !evidence.challengeId || !evidence.signature) {
-      throw new HttpException('Missing Liveness Evidence. Request rejected.', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Missing Liveness Evidence. Request rejected.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
-    
-    // In a real production app, verify the cryptographic signature of the challenge
-    // For this project, we check that it matches our expected challenge format.
-    if (evidence.signature !== 'VALID_LIVENESS_SIG_2026') {
-      throw new HttpException('Liveness challenge failed or tampered.', HttpStatus.UNAUTHORIZED);
+
+    const expectedSignature = this.config.get<string>(
+      'FACE_LIVENESS_SIGNATURE',
+    );
+    if (!expectedSignature) {
+      throw new HttpException(
+        'Liveness verification is not configured. Request rejected.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
-    
+
+    if (evidence.signature !== expectedSignature) {
+      throw new HttpException(
+        'Liveness challenge failed or tampered.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     return true;
   }
 

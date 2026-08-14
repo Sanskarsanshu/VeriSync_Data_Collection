@@ -14,8 +14,8 @@ async function bootstrap() {
   // Allow requests from the Vercel frontend and local dev.
   // FRONTEND_URL is set as an environment variable in Railway.
   const allowedOrigins = [
-    process.env.FRONTEND_URL,          // e.g. https://your-app.vercel.app
-    'http://localhost:5173',            // Vite local dev
+    process.env.FRONTEND_URL, // e.g. https://your-app.vercel.app
+    'http://localhost:5173', // Vite local dev
     'http://localhost:3000',
   ].filter(Boolean) as string[];
 

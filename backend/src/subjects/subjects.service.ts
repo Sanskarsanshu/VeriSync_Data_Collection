@@ -8,21 +8,25 @@ export class SubjectsService {
   async findAll() {
     const subjects = await this.prisma.subject.findMany({
       include: {
-        programme: { include: { department: true } }
-      }
+        programme: { include: { department: true } },
+      },
     });
 
-    return subjects.map(s => {
+    return subjects.map((s) => {
       return {
         id: s.id,
         code: s.code,
         name: s.name,
         credits: s.credits,
-        type: s.isPractical ? 'Practical' : 'Theory',
-        category: s.code.startsWith('CC') ? 'Core' : (s.code.startsWith('SEC') ? 'SEC' : 'Elective'),
-        semester: 'Sem-I', // Mocked as we don't have this link in schema without courses
+        type: s.type || (s.isPractical ? 'Theory + Practical' : 'Theory'),
+        category: s.code.startsWith('CC')
+          ? 'Core'
+          : s.code.startsWith('SEC')
+            ? 'SEC'
+            : 'Elective',
+        semester: s.semester,
         weeklyClasses: s.credits, // Fallback
-        dept: s.programme.department.name,
+        dept: 'MCA',
         status: 'Active',
         createdAt: new Date(),
       };
@@ -35,10 +39,16 @@ export class SubjectsService {
       data: {
         code: data.code,
         name: data.name,
-        credits: typeof data.credits === 'string' ? parseInt(data.credits, 10) || 3 : data.credits || 3,
-        isPractical: data.type === 'Practical' || data.type === 'Theory + Practical',
-        programmeId: programme?.id || ''
-      }
+        credits:
+          typeof data.credits === 'string'
+            ? parseInt(data.credits, 10) || 3
+            : data.credits || 3,
+        isPractical:
+          data.type === 'Practical' || data.type === 'Theory + Practical',
+        type: data.type || 'Theory',
+        semester: data.semester || '1',
+        programmeId: programme?.id || '',
+      },
     });
 
     return {
@@ -46,14 +56,14 @@ export class SubjectsService {
       code: subject.code,
       name: subject.name,
       credits: subject.credits,
-      type: data.type || 'Theory',
+      type: subject.type,
       category: data.category || 'Core',
-      semester: '1',
+      semester: subject.semester,
       weeklyClasses: 4,
       dept: 'MCA',
       status: 'Active',
       createdAt: new Date().toISOString().split('T')[0],
-      endDate: '-'
+      endDate: '-',
     };
   }
 
@@ -62,23 +72,30 @@ export class SubjectsService {
       where: { id },
       data: {
         name: data.name,
-        credits: typeof data.credits === 'string' ? parseInt(data.credits, 10) || 3 : data.credits,
-        isPractical: data.type ? (data.type === 'Practical' || data.type === 'Theory + Practical') : undefined
-      }
+        credits:
+          typeof data.credits === 'string'
+            ? parseInt(data.credits, 10) || 3
+            : data.credits,
+        isPractical: data.type
+          ? data.type === 'Practical' || data.type === 'Theory + Practical'
+          : undefined,
+        type: data.type !== undefined ? data.type : undefined,
+        semester: data.semester !== undefined ? data.semester : undefined,
+      },
     });
     return {
       id: subject.id,
       code: subject.code,
       name: subject.name,
       credits: subject.credits,
-      type: subject.isPractical ? 'Theory + Practical' : 'Theory',
+      type: subject.type,
       category: data.category || 'Core',
-      semester: data.semester || '1',
+      semester: subject.semester,
       weeklyClasses: data.weeklyClasses || 4,
       dept: data.dept || 'MCA',
       status: data.status || 'Active',
       createdAt: new Date().toISOString().split('T')[0],
-      endDate: data.endDate || '-'
+      endDate: data.endDate || '-',
     };
   }
 
@@ -87,4 +104,3 @@ export class SubjectsService {
     return { success: true };
   }
 }
-

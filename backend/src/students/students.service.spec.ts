@@ -8,7 +8,7 @@ const mockPrisma = {
   },
   attendanceSession: {
     findMany: jest.fn(),
-  }
+  },
 };
 
 describe('StudentsService', () => {
@@ -18,7 +18,7 @@ describe('StudentsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StudentsService,
-        { provide: PrismaService, useValue: mockPrisma }
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
@@ -32,7 +32,7 @@ describe('StudentsService', () => {
       name: 'Test Student',
       rollNumber: '123',
       section: { semester: { semesterNumber: 3 }, courses: [] },
-      attendanceRecords: [] // 0 attendance
+      attendanceRecords: [], // 0 attendance
     });
     mockPrisma.attendanceSession.findMany.mockResolvedValue([]);
 
@@ -47,9 +47,13 @@ describe('StudentsService', () => {
       id: 'student-1',
       section: {
         courses: [
-          { id: 'c1', subject: { code: 'CC310', name: 'Web Dev' }, primaryTeacher: { name: 'Praveen' } }
-        ]
-      }
+          {
+            id: 'c1',
+            subject: { code: 'CC310', name: 'Web Dev' },
+            primaryTeacher: { name: 'Praveen' },
+          },
+        ],
+      },
     });
 
     const courses = await service.getStudentCourses('user-1');
@@ -60,6 +64,8 @@ describe('StudentsService', () => {
 
   it('should throw error if student tries to access non-existent data (authorization)', async () => {
     mockPrisma.student.findUnique.mockResolvedValue(null);
-    await expect(service.getStudentDashboardData('invalid-user')).rejects.toThrow('Student profile not found for this user');
+    await expect(
+      service.getStudentDashboardData('invalid-user'),
+    ).rejects.toThrow('Student profile not found for this user');
   });
 });

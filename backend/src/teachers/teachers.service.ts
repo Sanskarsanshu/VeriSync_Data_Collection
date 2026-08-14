@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class TeachersService {
@@ -21,11 +22,26 @@ export class TeachersService {
     });
 
     const mappedTeachers = teachers.map(t => {
-      // Hardcoded mappings for the seeded mock teachers to perfectly match the frontend expectations
-      let subjects = ['CC101', 'CC102'];
-      let semesterSubjects: Record<string, string[]> = { "1": ["CC101", "CC102"] };
+      let subjects: string[] = [];
+      let semesterSubjects: Record<string, string[]> = {};
+      
+      // Load real assigned subjects from the database if they exist
+      if (t.courses && t.courses.length > 0) {
+        subjects = Array.from(new Set(t.courses.map((c) => c.subject?.code).filter(Boolean))) as string[];
+        for (const course of t.courses) {
+          const semNum = course.section?.semester?.semesterNumber;
+          if (semNum && course.subject?.code) {
+            const key = String(semNum);
+            if (!semesterSubjects[key]) semesterSubjects[key] = [];
+            if (!semesterSubjects[key].includes(course.subject.code)) {
+              semesterSubjects[key].push(course.subject.code);
+            }
+          }
+        }
+      }
+
       let image = `/${t.name.split(' ')[0].toLowerCase()}.png`;
-      let mockId = t.id; // fallback to UUID if not recognized
+      let mockId = t.employeeId || t.id; // fallback to employeeId if available, then UUID
 
       if (t.name.includes('Richa')) {
         mockId = 'FAC2020';
@@ -69,50 +85,69 @@ export class TeachersService {
       };
     });
 
-    // Manually append Dr. Bhawna Sinha since she is an ADMIN in the database, not a TEACHER
-    mappedTeachers.push({
-      id: 'FAC2024',
-      realId: 'admin-bhawna-sinha', // not actually deletable via teacher endpoint easily, but serves as key
-      name: 'Dr. Bhawna Sinha',
-      dept: 'Department of Computer Applications',
-      designation: 'Professor (HOD)',
-      subjects: ['CC103', 'SEC101', 'MDC302', 'CC313'],
-      semesterSubjects: { "1": ['CC103', 'SEC101'], "3": ['MDC302', 'CC313'] },
-      status: 'ACTIVE',
-      email: 'Bhawnasinha.mca@pwc.in',
-      phone: '+91 9876543210',
-      image: '/features/Bhawnasinha.png'
-    });
+    // Manually append Dr. Bhawna Sinha if she wasn't already included
+    const hasBhawna = mappedTeachers.some(t => t.id === 'FAC2024' || t.name.includes('Bhawna'));
+    if (!hasBhawna) {
+      mappedTeachers.push({
+        id: 'FAC2024',
+        realId: 'admin-bhawna-sinha',
+        name: 'Dr. Bhawna Sinha',
+        dept: 'Department of Computer Applications',
+        designation: 'Professor (HOD)',
+        subjects: ['CC103', 'SEC101', 'MDC302', 'CC313'],
+        semesterSubjects: { "1": ['CC103', 'SEC101'], "3": ['MDC302', 'CC313'] },
+        status: 'ACTIVE',
+        email: 'Bhawnasinha.mca@pwc.in',
+        phone: '+91 9876543210',
+        image: '/features/Bhawnasinha.png'
+      });
+    }
 
     return mappedTeachers;
   }
 
   async create(data: any) {
-    const passwordHash = await bcrypt.hash('Welcome@123', 10);
+    const generatedPassword = crypto.randomBytes(12).toString('base64url');
+    const passwordHash = await bcrypt.hash(generatedPassword, 10);
     const department = await this.prisma.department.findFirst({
       where: { name: { contains: 'Computer Applications' } }
     });
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash,
-        role: 'TEACHER',
-        status: data.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING',
-        teacherProfile: {
-          create: {
-            name: data.name,
-            employeeId: `EMP-${Date.now()}`,
-            departmentId: department?.id || '',
-            status: data.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
+    let user;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          email: data.email,
+          passwordHash,
+          role: 'TEACHER',
+          status: data.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING',
+          teacherProfile: {
+            create: {
+              name: data.name,
+              employeeId: data.employeeId || `EMP-${Date.now()}`,
+              departmentId: department?.id || '',
+              status: data.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
+            }
           }
-        }
-      },
-      include: { teacherProfile: true }
-    });
+        },
+        include: { teacherProfile: true }
+      });
+    } catch (e: any) {
+      if (e.code === 'P2002') {
+        const field = e.meta?.target?.includes('employeeId') ? 'Employee ID' : 'Email';
+        throw new HttpException(
+          `A teacher with this ${field} already exists.`,
+          HttpStatus.CONFLICT,
+        );
+      }
+      throw new HttpException(
+        e.message || 'Failed to create teacher',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
 
     return {
-      id: user.teacherProfile?.id || user.id,
+      id: user.teacherProfile?.employeeId || user.teacherProfile?.id || user.id,
       name: data.name,
       dept: data.dept || 'Department of Computer Applications',
       designation: data.designation || 'Assistant Professor',
@@ -122,6 +157,7 @@ export class TeachersService {
       email: data.email,
       phone: data.phone || '+91 9876543210',
       image: data.image || `/${data.name.split(' ')[0].toLowerCase()}.png`,
+      temporaryPassword: generatedPassword,
     };
   }
 
@@ -137,11 +173,21 @@ export class TeachersService {
         return { success: true, message: 'Admin updates not supported via teacher endpoint' };
     }
 
-    const teacher = await this.prisma.teacher.update({
-      where: { id: realId },
+    let teacher = await this.prisma.teacher.findUnique({ where: { id: realId }, include: { user: true } });
+    if (!teacher) {
+      // Fallback: try by employeeId
+      teacher = await this.prisma.teacher.findUnique({ where: { employeeId: id }, include: { user: true } });
+    }
+    
+    if (!teacher) {
+      return { success: false, message: 'Teacher not found' };
+    }
+
+    const updated = await this.prisma.teacher.update({
+      where: { id: teacher.id },
       data: {
-        name: data.name,
-        status: data.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE'
+        ...(data.name && { name: data.name }),
+        ...(data.status && { status: ['ACTIVE', 'ON_LEAVE'].includes(data.status) ? data.status : 'INACTIVE' })
       },
       include: { user: true }
     });
@@ -165,7 +211,12 @@ export class TeachersService {
   async remove(id: string) {
     let teacher = await this.prisma.teacher.findUnique({ where: { id } });
     if (!teacher) {
-      // If not found by UUID, try to find by teacher profile mapping (for mocked FAC IDs)
+      // If not found by UUID, try to find by employeeId
+      teacher = await this.prisma.teacher.findUnique({ where: { employeeId: id } });
+    }
+
+    if (!teacher) {
+      // If still not found, try to find by teacher profile mapping (for mocked FAC IDs)
       let emailMatch = '';
       if (id === 'FAC2020') emailMatch = 'Richaverma.mca@pwc.in';
       else if (id === 'FAC2021') emailMatch = 'Praveenkumar.mca@pwc.in';
@@ -183,6 +234,12 @@ export class TeachersService {
     if (teacher) {
       // Cascade delete user which deletes teacher profile
       await this.prisma.user.delete({ where: { id: teacher.userId } });
+    } else if (id === 'FAC2024') {
+      // Special fallback to permanently delete Dr. Bhawna Sinha if she only exists as an Admin
+      const adminUser = await this.prisma.user.findUnique({ where: { email: 'Bhawnasinha.mca@pwc.in' } });
+      if (adminUser) {
+        await this.prisma.user.delete({ where: { id: adminUser.id } });
+      }
     }
     return { success: true };
   }

@@ -34,17 +34,27 @@ export default function AdminSubjects() {
   const { addNotification } = useAppStore();
 
   const [formData, setFormData] = useState({
-    name: '', code: '', semester: 'I', category: 'Core', credits: 4, weeklyClasses: 4, type: 'THEORY'
+    name: '', code: '', semester: 'I', category: 'Core', credits: 4, weeklyClasses: 4, type: 'Theory'
   });
 
-  const filteredSubjects = subjects.filter(sub => 
-    (sub.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     sub.code.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (filterSemester === '' || sub.semester === filterSemester)
-  );
+  const filteredSubjects = subjects.filter(sub => {
+    const matchesSearch = sub.name.toLowerCase().includes(searchTerm.toLowerCase()) || sub.code.toLowerCase().includes(searchTerm.toLowerCase());
+    if (filterSemester === '') return matchesSearch;
+
+    let normalizedSem = String(sub.semester).toUpperCase();
+    if (normalizedSem.includes('1') || normalizedSem.match(/\bI\b/) || normalizedSem === 'SEM-I' || normalizedSem === 'I') normalizedSem = '1';
+    else if (normalizedSem.includes('2') || normalizedSem.match(/\bII\b/) || normalizedSem === 'SEM-II' || normalizedSem === 'II') normalizedSem = '2';
+    else if (normalizedSem.includes('3') || normalizedSem.match(/\bIII\b/) || normalizedSem === 'SEM-III' || normalizedSem === 'III') normalizedSem = '3';
+    else if (normalizedSem.includes('4') || normalizedSem.match(/\bIV\b/) || normalizedSem === 'SEM-IV' || normalizedSem === 'IV') normalizedSem = '4';
+    else if (normalizedSem.includes('5') || normalizedSem.match(/\bV\b/) || normalizedSem === 'SEM-V' || normalizedSem === 'V') normalizedSem = '5';
+    else if (normalizedSem.includes('6') || normalizedSem.match(/\bVI\b/) || normalizedSem === 'SEM-VI' || normalizedSem === 'VI') normalizedSem = '6';
+    else normalizedSem = normalizedSem.replace(/[^0-9]/g, '');
+
+    return matchesSearch && normalizedSem === filterSemester;
+  });
 
   const openAddModal = () => {
-    setFormData({ name: '', code: '', semester: 'I', category: 'Core', credits: 4, weeklyClasses: 4, type: 'THEORY' });
+    setFormData({ name: '', code: '', semester: 'I', category: 'Core', credits: 4, weeklyClasses: 4, type: 'Theory' });
     setIsEditMode(false);
     setEditingCode(null);
     setIsModalOpen(true);
@@ -266,7 +276,9 @@ export default function AdminSubjects() {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                   value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}
                 >
-                  <option>THEORY</option><option>PRACTICAL</option>
+                  <option>Theory</option>
+                  <option>Practical</option>
+                  <option>Theory + Practical</option>
                 </select>
               </div>
             </div>
@@ -304,7 +316,7 @@ export default function AdminSubjects() {
           <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title="Subject Details">
             <div className="space-y-6">
               <div className="flex items-start gap-4 p-4 bg-muted/20 rounded-xl border border-border">
-                <div className={`p-3 rounded-xl ${selectedSubject.type === 'PRACTICAL' ? 'bg-blue-500/10 text-blue-500' : 'bg-orange-500/10 text-orange-500'}`}>
+                <div className={`p-3 rounded-xl ${selectedSubject.type.toLowerCase().includes('practical') ? 'bg-blue-500/10 text-blue-500' : 'bg-orange-500/10 text-orange-500'}`}>
                   <BookOpen size={24} />
                 </div>
                 <div>

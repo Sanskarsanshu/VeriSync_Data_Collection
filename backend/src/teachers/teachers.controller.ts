@@ -1,4 +1,13 @@
-import { Controller, Get, Delete, Param, Post, Patch, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Param,
+  Post,
+  Patch,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { TeachersService } from './teachers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -32,4 +41,3 @@ export class TeachersController {
     return this.teachersService.remove(id);
   }
 }
-

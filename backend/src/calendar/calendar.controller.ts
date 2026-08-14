@@ -8,29 +8,32 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class CalendarController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eligibilityService: CalendarEligibilityService
+    private readonly eligibilityService: CalendarEligibilityService,
   ) {}
 
   @Get('events/:collegeId')
   async getCalendarEvents(@Param('collegeId') collegeId: string) {
     return this.prisma.academicCalendarEvent.findMany({
       where: { calendar: { collegeId, status: 'ACTIVE' } },
-      orderBy: { date: 'asc' }
+      orderBy: { date: 'asc' },
     });
   }
 
   @Get('eligibility/:courseId')
   async checkEligibility(
-    @Param('courseId') courseId: string, 
-    @Query('date') dateString: string
+    @Param('courseId') courseId: string,
+    @Query('date') dateString: string,
   ) {
     const date = new Date(dateString);
-    const eligibility = await this.eligibilityService.checkEligibility(courseId, date);
+    const eligibility = await this.eligibilityService.checkEligibility(
+      courseId,
+      date,
+    );
     return {
       courseId,
       date: date.toISOString(),
       eligibility,
-      canMarkAttendance: eligibility === 'ELIGIBLE'
+      canMarkAttendance: eligibility === 'ELIGIBLE',
     };
   }
 }

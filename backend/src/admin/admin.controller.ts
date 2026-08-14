@@ -14,7 +14,7 @@ export class AdminController {
     const stats = await this.adminService.getDashboardStats();
     return {
       status: 'success',
-      data: stats
+      data: stats,
     };
   }
 }

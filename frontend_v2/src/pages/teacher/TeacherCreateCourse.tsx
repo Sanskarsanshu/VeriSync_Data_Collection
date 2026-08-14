@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useDataStore } from '@/store/useDataStore';
@@ -11,13 +11,18 @@ import { cn } from '@/lib/utils';
 export default function TeacherCreateCourse() {
   const navigate = useNavigate();
   const { user } = useAppStore();
-  const { teachers, subjects, authorizations, addCourseInstance, markAuthorizationUsed } = useDataStore();
-  
+  const { teachers, subjects, authorizations, addCourseInstance, markAuthorizationUsed, fetchTeachers, fetchSubjects } = useDataStore();
+
+  useEffect(() => {
+    fetchTeachers();
+    fetchSubjects();
+  }, [fetchTeachers, fetchSubjects]);
+
   // Find current teacher
   const currentTeacher = useMemo(() => {
     if (!teachers || teachers.length === 0) return null;
-    if (!user) return teachers[0];
-    return teachers.find(t => t.email.toLowerCase() === user.email?.toLowerCase()) || teachers[0];
+    if (!user) return null;
+    return teachers.find(t => t.email.toLowerCase() === user.email?.toLowerCase()) || null;
   }, [user, teachers]);
 
   // Extract all assigned subjects for dropdown
@@ -281,7 +286,7 @@ export default function TeacherCreateCourse() {
                   className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
                   value={formData.authCode}
                   onChange={e => setFormData({...formData, authCode: e.target.value})}
-                  placeholder="Example: Wc7P2kLm9Q"
+                  placeholder="Enter the authorisation code from the admin"
                 />
                 <p className="text-xs text-muted-foreground pt-1">The code is single-purpose and bound to your account, subject, session, semester and section.</p>
               </div>
@@ -348,7 +353,7 @@ export default function TeacherCreateCourse() {
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-foreground">Verified teacher account</h4>
-                    <p className="text-sm text-muted-foreground mt-0.5">{currentTeacher?.email || 'Loading...'}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{currentTeacher?.email || (teachers.length === 0 ? 'Loading teacher profile...' : 'No matching teacher account for this login.')}</p>
                   </div>
                 </div>
 
@@ -386,16 +391,6 @@ export default function TeacherCreateCourse() {
                 </div>
 
               </div>
-            </div>
-
-            {/* Alert Box */}
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 shadow-sm">
-              <h4 className="text-sm font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
-                Demo code available
-              </h4>
-              <p className="text-sm text-amber-700/80 dark:text-amber-400/80 mt-1">
-                Use the mock code <strong className="font-mono text-amber-900 dark:text-amber-300">Wc7P2kLm9Q</strong> for testing. (Requires Session: 2024-2026, Sem: I, Sec: A, Subject: CC102).
-              </p>
             </div>
           </div>
 

@@ -7,12 +7,12 @@ import * as bcrypt from 'bcrypt';
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (user && await bcrypt.compare(pass, user.passwordHash)) {
+    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
       if (user.status !== 'ACTIVE') {
         throw new UnauthorizedException('Account is not active.');
       }
@@ -34,19 +34,27 @@ export class AuthService {
    * Checks adminProfile first, then teacherProfile.
    * Called by the /auth/me endpoint to restore session on page load.
    */
-  async getMe(userId: string): Promise<{ id: string; email: string; role: string; name: string; studentId?: string; rollNumber?: string; avatar?: string }> {
+  async getMe(userId: string): Promise<{
+    id: string;
+    email: string;
+    role: string;
+    name: string;
+    studentId?: string;
+    rollNumber?: string;
+    avatar?: string;
+  }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
         adminProfile: { select: { name: true } },
         teacherProfile: { select: { name: true } },
-        studentProfile: { 
-          select: { 
-            name: true, 
-            rollNumber: true, 
+        studentProfile: {
+          select: {
+            name: true,
+            rollNumber: true,
             id: true,
-            profile: { select: { photoUrl: true } }
-          } 
+            profile: { select: { photoUrl: true } },
+          },
         },
       },
     });
@@ -60,7 +68,7 @@ export class AuthService {
       user.teacherProfile?.name ??
       user.studentProfile?.name ??
       user.email;
-      
+
     const avatar = user.studentProfile?.profile?.photoUrl || undefined;
 
     return {

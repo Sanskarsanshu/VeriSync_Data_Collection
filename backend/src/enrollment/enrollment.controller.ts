@@ -10,8 +10,13 @@ export class EnrollmentController {
   @UseGuards(JwtAuthGuard)
   @Roles('ADMIN')
   @Post('admin/generate-link')
-  async generateLink(@Body() body: { targetRollNumber?: string; targetName?: string }) {
-    return this.enrollmentService.generateLink(body.targetRollNumber, body.targetName);
+  async generateLink(
+    @Body() body: { targetRollNumber?: string; targetName?: string },
+  ) {
+    return this.enrollmentService.generateLink(
+      body.targetRollNumber,
+      body.targetName,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -37,7 +42,7 @@ export class EnrollmentController {
   }
 
   @Post('verify-otp')
-  async verifyOtp(@Body() body: { email: string, otp: string }) {
+  async verifyOtp(@Body() body: { email: string; otp: string }) {
     return this.enrollmentService.verifyOtp(body.email, body.otp);
   }
 

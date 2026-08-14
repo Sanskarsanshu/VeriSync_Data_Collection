@@ -16,7 +16,9 @@ const mockPrisma = {
   $transaction: jest.fn((cb: any) =>
     cb({
       user: { create: jest.fn().mockResolvedValue({ id: 'user-id' }) },
-      student: { create: jest.fn().mockResolvedValue({ id: ACTUAL_STUDENT_ID }) },
+      student: {
+        create: jest.fn().mockResolvedValue({ id: ACTUAL_STUDENT_ID }),
+      },
       enrollmentToken: { update: jest.fn() },
       auditLog: { create: auditLogCreate },
     }),
@@ -50,7 +52,9 @@ describe('EnrollmentService', () => {
     mockPrisma.$transaction.mockImplementation((cb: any) =>
       cb({
         user: { create: jest.fn().mockResolvedValue({ id: 'user-id' }) },
-        student: { create: jest.fn().mockResolvedValue({ id: ACTUAL_STUDENT_ID }) },
+        student: {
+          create: jest.fn().mockResolvedValue({ id: ACTUAL_STUDENT_ID }),
+        },
         enrollmentToken: { update: jest.fn() },
         auditLog: { create: auditLogCreate },
       }),
@@ -59,7 +63,10 @@ describe('EnrollmentService', () => {
 
   it('should assign new student to the canonical Semester 3 section and ignore frontend sectionId', async () => {
     mockPrisma.section.findMany.mockResolvedValue([
-      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+      {
+        id: 'canonical-section',
+        semester: { batchId: 'batch-id', semesterNumber: 3 },
+      },
     ]);
     mockPrisma.course.count.mockResolvedValue(5);
 
@@ -83,7 +90,10 @@ describe('EnrollmentService', () => {
 
   it('should return the actual persisted Student id, not a synthetic value', async () => {
     mockPrisma.section.findMany.mockResolvedValue([
-      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+      {
+        id: 'canonical-section',
+        semester: { batchId: 'batch-id', semesterNumber: 3 },
+      },
     ]);
     mockPrisma.course.count.mockResolvedValue(5);
 
@@ -96,24 +106,34 @@ describe('EnrollmentService', () => {
 
   it('should resolve the single section that has courses when multiple ACTIVE Sem-3 sections exist', async () => {
     mockPrisma.section.findMany.mockResolvedValue([
-      { id: 'empty-section', semester: { batchId: 'batch1', semesterNumber: 3 } },
-      { id: 'canonical-section', semester: { batchId: 'batch2', semesterNumber: 3 } },
+      {
+        id: 'empty-section',
+        semester: { batchId: 'batch1', semesterNumber: 3 },
+      },
+      {
+        id: 'canonical-section',
+        semester: { batchId: 'batch2', semesterNumber: 3 },
+      },
     ]);
-    mockPrisma.course.count
-      .mockResolvedValueOnce(0)
-      .mockResolvedValueOnce(6);
+    mockPrisma.course.count.mockResolvedValueOnce(0).mockResolvedValueOnce(6);
 
     const result = await service.submitEnrollment(validBody);
 
     expect(result.success).toBe(true);
-    expect(mockPrisma.course.count).toHaveBeenCalledWith({ where: { sectionId: 'empty-section' } });
-    expect(mockPrisma.course.count).toHaveBeenCalledWith({ where: { sectionId: 'canonical-section' } });
+    expect(mockPrisma.course.count).toHaveBeenCalledWith({
+      where: { sectionId: 'empty-section' },
+    });
+    expect(mockPrisma.course.count).toHaveBeenCalledWith({
+      where: { sectionId: 'canonical-section' },
+    });
   });
 
   it('should fail safely when no ACTIVE Semester 3 Section A exists', async () => {
     mockPrisma.section.findMany.mockResolvedValue([]);
 
-    await expect(service.submitEnrollment(validBody)).rejects.toThrow(HttpException);
+    await expect(service.submitEnrollment(validBody)).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('should fail safely when no canonical section has courses', async () => {
@@ -122,7 +142,9 @@ describe('EnrollmentService', () => {
     ]);
     mockPrisma.course.count.mockResolvedValue(0);
 
-    await expect(service.submitEnrollment(validBody)).rejects.toThrow(HttpException);
+    await expect(service.submitEnrollment(validBody)).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('should fail safely when multiple canonical sections have courses', async () => {
@@ -132,12 +154,17 @@ describe('EnrollmentService', () => {
     ]);
     mockPrisma.course.count.mockResolvedValue(3);
 
-    await expect(service.submitEnrollment(validBody)).rejects.toThrow(HttpException);
+    await expect(service.submitEnrollment(validBody)).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('should write an ENROLLMENT_CREATED audit log inside the transaction', async () => {
     mockPrisma.section.findMany.mockResolvedValue([
-      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+      {
+        id: 'canonical-section',
+        semester: { batchId: 'batch-id', semesterNumber: 3 },
+      },
     ]);
     mockPrisma.course.count.mockResolvedValue(5);
 
@@ -161,7 +188,10 @@ describe('EnrollmentService', () => {
 
   it('should return 409 Conflict on a duplicate unique constraint (P2002)', async () => {
     mockPrisma.section.findMany.mockResolvedValue([
-      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+      {
+        id: 'canonical-section',
+        semester: { batchId: 'batch-id', semesterNumber: 3 },
+      },
     ]);
     mockPrisma.course.count.mockResolvedValue(5);
     mockPrisma.$transaction.mockRejectedValue({ code: 'P2002' });
@@ -173,7 +203,10 @@ describe('EnrollmentService', () => {
 
   it('should return 500 Internal Server Error on unexpected failures', async () => {
     mockPrisma.section.findMany.mockResolvedValue([
-      { id: 'canonical-section', semester: { batchId: 'batch-id', semesterNumber: 3 } },
+      {
+        id: 'canonical-section',
+        semester: { batchId: 'batch-id', semesterNumber: 3 },
+      },
     ]);
     mockPrisma.course.count.mockResolvedValue(5);
     mockPrisma.$transaction.mockRejectedValue(new Error('boom'));

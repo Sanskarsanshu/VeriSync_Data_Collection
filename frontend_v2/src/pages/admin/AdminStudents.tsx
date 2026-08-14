@@ -25,37 +25,6 @@ function initials(name: string){
   return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
 }
 
-const RAW_STUDENTS = [
-  {name:'Ananya Singh',  roll:'MCA030', course:'EC202', seed:88, verification:'Verified',     time:'09:02 AM'},
-  {name:'Garima Gupta',  roll:'MCA031', course:'EC202', seed:81, verification:'Not verified', time:'—'},
-  {name:'Harshita Jha',  roll:'MCA032', course:'EC202', seed:90, verification:'Verified',     time:'09:05 AM'},
-  {name:'Komal Kumari',  roll:'MCA033', course:'EC202', seed:76, verification:'Not verified', time:'—'},
-  {name:'Mahi Verma',    roll:'MCA034', course:'EC202', seed:93, verification:'Verified',     time:'08:58 AM'},
-  {name:'Neha Sinha',    roll:'MCA035', course:'EC202', seed:70, verification:'Not verified', time:'—'},
-  {name:'Pallavi Roy',   roll:'MCA036', course:'EC202', seed:85, verification:'Not verified', time:'—'},
-  {name:'Pooja Sharma',  roll:'MCA037', course:'EC202', seed:79, verification:'Verified',     time:'09:11 AM'},
-  {name:'Riya Kumari',   roll:'MCA038', course:'EC202', seed:66, verification:'Not verified', time:'—'},
-];
-
-const mockStudents: Student[] = RAW_STUDENTS
-  .map((s,i)=>({
-    id:'s'+i,
-    name:s.name,
-    roll:s.roll,
-    course:s.course,
-    examRoll:'25'+s.roll.replace('MCA','MCA0'),
-    regNo:'25PWC0'+s.roll.replace(/\D/g,''),
-    session:'2025–27',
-    classText:'MCA, Sem-IV',
-    color:AVATAR_COLORS[i % AVATAR_COLORS.length],
-    status: s.seed < 75 ? 'WARNING' : 'ACTIVE',
-    verification:s.verification,
-    time:s.time,
-    monthly: {}, // Handled by backend now
-    matrix: {}, // Handled by backend now
-    faceEnrolled: s.verification === 'Verified',
-    attendance: s.seed
-  }));
 
 
 // --- Mini Donut Chart Component ---
@@ -202,7 +171,7 @@ const DetailView = ({ student, onBack }: { student: Student, onBack: () => void 
 
       <div className="flex flex-wrap gap-10 bg-card border border-border rounded-2xl p-8 shadow-sm mb-6 justify-center md:justify-start">
         {monthsToRender.slice(0, 5).map(m => (
-          <MiniDonut key={m} present={student.monthly[m].present} monthLabel={m} />
+          <MiniDonut key={m} present={student.monthly?.[m]?.present ?? 0} monthLabel={m} />
         ))}
       </div>
 
@@ -444,7 +413,7 @@ export default function AdminStudents() {
                         <td colSpan={7} className="px-6 py-8">
                           <div className="flex items-center gap-8 pl-10 overflow-x-auto">
                             {MONTHS_LATEST_FIRST.slice(1, 6).map(m => ( // Showing 5 months for the mini summary
-                              <MiniDonut key={m} present={student.monthly[m].present} monthLabel={m} />
+                              <MiniDonut key={m} present={student.monthly?.[m]?.present ?? 0} monthLabel={m} />
                             ))}
                             
                             <div className="ml-8 flex flex-col items-center justify-center pt-2">
